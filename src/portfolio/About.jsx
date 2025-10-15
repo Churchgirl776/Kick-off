@@ -37,9 +37,9 @@ const About = () => {
       {/* Right Side - Content */}
       <motion.div
         className="flex-1 max-w-xl space-y-6"
-        initial={{ opacity: 0, x: 50 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8 }}
+        initial={{ opacity: 0, y: 100 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9 }}
       >
         <h2 className="text-3xl md:text-4xl font-bold">
           Crafting Digital Experiences That{" "}
@@ -64,7 +64,7 @@ const About = () => {
             className="flex items-center gap-4 p-4 bg-black rounded-lg"
             whileHover={{ scale: 1.05 }}
           >
-            <div className="bg-green-500 p-3 rounded-lg">
+            <div className="bg-green-950 p-3 rounded-lg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 text-white"
@@ -92,7 +92,7 @@ const About = () => {
             className="flex items-center gap-4 p-4 bg-black rounded-lg"
             whileHover={{ scale: 1.05 }}
           >
-            <div className="bg-blue-600 p-3 rounded-lg">
+            <div className="bg-blue-950 p-3 rounded-lg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 text-white"
@@ -120,7 +120,7 @@ const About = () => {
             className="flex items-center gap-4 p-4 bg-black rounded-lg"
             whileHover={{ scale: 1.05 }}
           >
-            <div className="bg-purple-600 p-3 rounded-lg">
+            <div className="bg-purple-950 p-3 rounded-lg">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 text-white"
