@@ -18,8 +18,19 @@ const Experience = () => {
     return () => unsubscribe();
   }, []);
 
+  // Smooth scroll function
+  const scrollToSection = (id) => {
+    const section = document.getElementById(id);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
-    <section className="flex flex-col items-center bg-black text-white py-16 px-4 md:px-20 relative" id="experience">
+    <section
+      className="flex flex-col items-center bg-black text-white py-16 px-4 md:px-20 relative"
+      id="experience"
+    >
       {/* Section Header */}
       <h1 className="text-center text-4xl font-light mb-12">
         Professional{" "}
@@ -78,14 +89,12 @@ const Experience = () => {
       {/* Footer */}
       <div className="mt-10 text-gray-400 text-center">
         Want to learn more about my professional journey? <br />
-        <a
-          href="https://www.linkedin.com/in/abdulaziz-alqarni-9a6b871a5/"
-          className="text-green-500 hover:underline"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => scrollToSection("contact")}
+          className="text-green-500 hover:underline mt-2"
         >
           Get in touch
-        </a>
+        </button>
       </div>
     </section>
   );
