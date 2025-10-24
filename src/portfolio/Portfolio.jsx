@@ -4,9 +4,8 @@ import Hero from "./Hero";
 import About from "./About";
 import PortfolioSkill from "./PortfolioSkill";
 import Experience from "./Experience";
-import PortfolioProject from "./PortfolioProject";
+import Projects from "./Projects";
 import Awards from "./Awards";
-import PortfolioAwards from "./PortfolioAwards";
 import Contact from "./Contact"; // Updated contact page with toast + smooth scroll
 
 // Scroll provider for smooth scroll effects
@@ -41,16 +40,13 @@ function Portfolio() {
       </Element>
 
 
-       <Element name="portfolioproject">
-        <PortfolioProject />
+       <Element name="projects">
+        <Projects />
       </Element>
+
 
       <Element name="awards">
         <Awards />
-      </Element>
-
-      <Element name="portfolioawards">
-        <PortfolioAwards />
       </Element>
 
       <Element name="contact">

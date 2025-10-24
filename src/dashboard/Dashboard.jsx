@@ -20,6 +20,7 @@ const Dashboard = () => {
     skills: 0,
     awards: 0,
     experience: 0,
+    social: 0,
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,7 +36,7 @@ const Dashboard = () => {
   // Real-time listeners for stats (auto-updates when collections change)
   useEffect(() => {
     setLoading(true);
-    const collections = ["projects", "skills", "awards", "experience"];
+    const collections = ["projects", "skills", "awards", "experience","social"];
 
     const unsubscribers = collections.map((colName) => {
       const colRef = collection(db, colName);
@@ -60,12 +61,13 @@ const Dashboard = () => {
   const fetchStats = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [projectsSnap, skillsSnap, awardsSnap, experienceSnap] =
+      const [projectsSnap, skillsSnap, awardsSnap, experienceSnap, socialSnap] =
         await Promise.all([
           getDocs(collection(db, "projects")),
           getDocs(collection(db, "skills")),
           getDocs(collection(db, "awards")),
           getDocs(collection(db, "experience")),
+          getDocs(collection(db, "social")),
         ]);
 
       setStats({
@@ -73,6 +75,7 @@ const Dashboard = () => {
         skills: skillsSnap.size,
         awards: awardsSnap.size,
         experience: experienceSnap.size,
+        socialMedia: socialSnap.size,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -147,7 +150,7 @@ const Dashboard = () => {
 
         {/* Overview Section */}
         {activeSection === "overview" && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             {loading ? (
               <p className="text-center col-span-full">Loading stats...</p>
             ) : (
@@ -202,6 +205,19 @@ const Dashboard = () => {
                   </h3>
                   <p className="text-2xl font-bold text-orange-600">{stats.experience}</p>
                   <p className="text-gray-500 text-sm">Work experience</p>
+                </motion.div>
+
+                <motion.div
+                  className="p-6 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition"
+                  variants={cardVariant}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  <h3 className="font-semibold text-lg mb-2 text-gray-900">
+                    Socials
+                  </h3>
+                  <p className="text-2xl font-bold text-yellow-900">{stats.socialMedia}</p>
+                  <p className="text-gray-500 text-sm">Social Media Handles</p>
                 </motion.div>
               </>
             )}

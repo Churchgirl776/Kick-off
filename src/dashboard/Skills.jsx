@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
+import { toast, Toaster } from "react-hot-toast";
 
 const Skills = ({ onUpdate }) => {
   const [skills, setSkills] = useState([]);
@@ -45,6 +46,8 @@ const Skills = ({ onUpdate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      toast.loading(editingSkill ? "Updating skill..." : "Adding skill...");
+
       const technologiesArray = formData.technologies
         .split(",")
         .map((t) => t.trim())
@@ -63,10 +66,15 @@ const Skills = ({ onUpdate }) => {
 
       if (editingSkill) {
         await updateDoc(doc(db, "skills", editingSkill.id), skillData);
+        toast.dismiss();
+        toast.success("Skill updated successfully! 🎉");
       } else {
         await addDoc(collection(db, "skills"), skillData);
+        toast.dismiss();
+        toast.success("Skill added successfully! 🚀");
       }
 
+      // Reset form
       setShowForm(false);
       setEditingSkill(null);
       setFormData({
@@ -79,21 +87,47 @@ const Skills = ({ onUpdate }) => {
       });
     } catch (error) {
       console.error("Error saving skill:", error);
+      toast.dismiss();
+      toast.error("Something went wrong. Please try again!");
     }
   };
 
-  // ✅ Handle Delete
+  // ✅ Handle Delete with Toast
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this skill?")) {
-      try {
-        await deleteDoc(doc(db, "skills", id));
-      } catch (error) {
-        console.error("Error deleting skill:", error);
+    toast(
+      (t) => (
+        <div className="flex flex-col space-y-2">
+          <p>Are you sure you want to delete this skill?</p>
+          <div className="flex justify-end space-x-2">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.promise(deleteDoc(doc(db, "skills", id)), {
+                  loading: "Deleting skill...",
+                  success: "Skill deleted successfully! 🗑️",
+                  error: "Failed to delete skill.",
+                });
+              }}
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+            >
+              Yes, Delete
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="bg-gray-200 px-3 py-1 rounded text-sm hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 4000,
       }
-    }
+    );
   };
 
-  // ✅ Handle Edit button (fixed)
+  // ✅ Handle Edit
   const handleEdit = (skill) => {
     setEditingSkill(skill);
     setFormData({
@@ -108,7 +142,25 @@ const Skills = ({ onUpdate }) => {
   };
 
   return (
-    <div>
+    <div className="relative">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "#111",
+            color: "#fff",
+            border: "1px solid #16a34a",
+          },
+          success: {
+            iconTheme: {
+              primary: "#16a34a",
+              secondary: "#111",
+            },
+          },
+        }}
+      />
+
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -231,7 +283,7 @@ const Skills = ({ onUpdate }) => {
                 />
               </div>
 
-              {/* Technologies (comma-separated) */}
+              {/* Technologies */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Technologies (comma-separated)
@@ -308,7 +360,6 @@ const Skills = ({ onUpdate }) => {
               </p>
             )}
 
-            {/* Technologies Pills */}
             {skill.technologies && skill.technologies.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {skill.technologies.map((tech, idx) => (
@@ -322,7 +373,6 @@ const Skills = ({ onUpdate }) => {
               </div>
             )}
 
-            {/* Proficiency */}
             <div className="mb-4">
               <div className="flex justify-between text-sm text-gray-600 mb-1">
                 <span>Proficiency</span>
@@ -336,7 +386,6 @@ const Skills = ({ onUpdate }) => {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex space-x-2">
               <button
                 onClick={() => handleEdit(skill)}

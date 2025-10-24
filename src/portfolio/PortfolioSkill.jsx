@@ -20,7 +20,7 @@ const PortfolioSkill = () => {
   return (
     <section
       id="skills"
-      className="min-h-screen flex flex-col justify-center items-center py-16 px-6 md:px-12 bg-[#0a0a0a] text-white"
+      className="flex flex-col justify-center items-center py-10 md:py-12 px-6 md:px-12 bg-[#0a0a0a] text-white mb-10"
     >
       <div className="w-full max-w-7xl">
         {/* Header */}
@@ -28,7 +28,8 @@ const PortfolioSkill = () => {
           Skills <span className="text-emerald-400">& Expertise</span>
         </h2>
         <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
-          A comprehensive toolkit for creating products that drive growth and deliver exceptional user experiences.
+          A comprehensive toolkit for creating products that drive growth and
+          deliver exceptional user experiences.
         </p>
 
         {/* Skill Cards Grid */}
@@ -54,11 +55,12 @@ const PortfolioSkill = () => {
                   ) : (
                     <div className="w-6 h-6 bg-gray-700 rounded-full" />
                   )}
-                </div><br />
+                </div>
                 <div>
-                    <h3 className="text-lg font-semibold transition-colors duration-300 group-hover:text-emerald-400">
-                  {skill.name}
-                </h3></div>
+                  <h3 className="text-lg font-semibold transition-colors duration-300 group-hover:text-emerald-400">
+                    {skill.name}
+                  </h3>
+                </div>
               </div>
 
               {/* Description */}

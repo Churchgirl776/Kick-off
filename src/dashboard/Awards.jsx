@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
+import { toast, Toaster } from "react-hot-toast";
 
 const Awards = () => {
   const [awards, setAwards] = useState([]);
@@ -40,21 +41,34 @@ const Awards = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const { icon, year, title, description } = formData;
+    if (!year || !title) {
+      toast.error("Please fill in at least Year and Title.");
+      return;
+    }
+
+    const toastId = toast.loading(
+      editingAward ? "Updating award..." : "Adding award..."
+    );
+
     try {
       const awardData = {
-        ...formData,
+        icon,
+        year,
+        title,
+        description,
         createdAt: serverTimestamp(),
       };
 
       if (editingAward) {
-        // Update
         await updateDoc(doc(db, "awards", editingAward.id), awardData);
+        toast.success("Award updated successfully 🎉", { id: toastId });
       } else {
-        // Add new
         await addDoc(collection(db, "awards"), awardData);
+        toast.success("Award added successfully 🏆", { id: toastId });
       }
 
-      // Reset
+      // Reset form
       setShowForm(false);
       setEditingAward(null);
       setFormData({
@@ -65,27 +79,69 @@ const Awards = () => {
       });
     } catch (error) {
       console.error("Error saving award:", error);
+      toast.error("Error saving award ❌", { id: toastId });
     }
   };
 
-  // 🗑️ Delete
+  // 🗑️ Delete Award (with toast confirmation)
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this award?")) {
-      try {
-        await deleteDoc(doc(db, "awards", id));
-      } catch (error) {
-        console.error("Error deleting award:", error);
-      }
-    }
+    toast((t) => (
+      <div>
+        <p className="text-sm font-medium mb-2">
+          Are you sure you want to delete this award?
+        </p>
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const deletingToast = toast.loading("Deleting award...");
+              try {
+                await deleteDoc(doc(db, "awards", id));
+                toast.success("Award deleted successfully 🗑️", {
+                  id: deletingToast,
+                });
+              } catch (err) {
+                console.error("Error deleting award:", err);
+                toast.error("Error deleting award ❌", { id: deletingToast });
+              }
+            }}
+            className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="bg-gray-200 px-3 py-1 rounded text-sm hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ));
   };
 
   return (
     <section className="py-10 px-6 md:px-12 bg-gray-50 min-h-screen">
+      {/* Toast Container */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "#fff",
+            color: "#111",
+            border: "1px solid #e5e7eb",
+          },
+        }}
+      />
+
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Awards</h2>
-          <p className="text-gray-600">Manage your recognitions & achievements</p>
+          <p className="text-gray-600">
+            Manage your recognitions & achievements
+          </p>
         </div>
         <button
           onClick={() => {

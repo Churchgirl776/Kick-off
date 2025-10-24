@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link as ScrollLink, animateScroll as scroll } from "react-scroll";
 import { motion } from "framer-motion";
 import { toast, Toaster } from "react-hot-toast";
@@ -6,11 +6,28 @@ import {
   FaEnvelope,
   FaPhone,
   FaMapMarkerAlt,
+  FaArrowUp,
   FaLinkedin,
   FaTwitter,
   FaGithub,
-  FaArrowUp,
+  FaFacebookF,
+  FaInstagram,
+  FaYoutube,
+  FaGlobe,
 } from "react-icons/fa";
+import { db } from "../firebase/firebaseConfig";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+
+// Map Firestore "name" values to icons
+const iconMap = {
+  linkedin: <FaLinkedin size={20} />,
+  twitter: <FaTwitter size={20} />,
+  github: <FaGithub size={20} />,
+  facebook: <FaFacebookF size={20} />,
+  instagram: <FaInstagram size={20} />,
+  youtube: <FaYoutube size={20} />,
+  website: <FaGlobe size={20} />,
+};
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -19,6 +36,21 @@ const Contact = () => {
     subject: "",
     message: "",
   });
+
+  const [socialLinks, setSocialLinks] = useState([]);
+
+  // 🔹 Fetch dynamic social media links from Firestore
+  useEffect(() => {
+    const q = query(collection(db, "socialMedia"), orderBy("name", "asc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const links = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setSocialLinks(links);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -82,32 +114,24 @@ const Contact = () => {
             </li>
           </ul>
 
-          {/* Social Links */}
-          <div className="mt-6 flex items-center space-x-5">
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-green-500 transition"
-            >
-              <FaLinkedin size={20} />
-            </a>
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-green-500 transition"
-            >
-              <FaTwitter size={20} />
-            </a>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-green-500 transition"
-            >
-              <FaGithub size={20} />
-            </a>
+          {/* 🔹 Dynamic Social Links */}
+          <div className="mt-6 flex items-center flex-wrap gap-5">
+            {socialLinks.length > 0 ? (
+              socialLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-green-500 transition"
+                  title={link.displayName || link.name}
+                >
+                  {iconMap[link.name?.toLowerCase()] || <FaGlobe size={20} />}
+                </a>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">Loading social links...</p>
+            )}
           </div>
 
           {/* Availability */}
@@ -183,7 +207,6 @@ const Contact = () => {
 
       {/* Footer Section */}
       <footer className="mt-16 border-t border-gray-800 pt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm text-gray-400">
-        {/* Portfolio */}
         <div>
           <h4 className="text-white font-semibold mb-4">Portfolio</h4>
           <p>
@@ -192,84 +215,26 @@ const Contact = () => {
           </p>
         </div>
 
-        {/* Quick Links */}
         <div>
           <h4 className="text-white font-semibold mb-4">Quick Links</h4>
           <ul className="space-y-2">
-            <li>
-              <ScrollLink
-                to="home"
-                smooth={true}
-                duration={600}
-                className="hover:text-green-500 transition cursor-pointer"
-              >
-                Home
-              </ScrollLink>
-            </li>
-            <li>
-              <ScrollLink
-                to="about"
-                smooth={true}
-                duration={600}
-                className="hover:text-green-500 transition cursor-pointer"
-              >
-                About
-              </ScrollLink>
-            </li>
-            <li>
-              <ScrollLink
-                to="skills"
-                smooth={true}
-                duration={600}
-                className="hover:text-green-500 transition cursor-pointer"
-              >
-                Skills
-              </ScrollLink>
-            </li>
-            <li>
-              <ScrollLink
-                to="experience"
-                smooth={true}
-                duration={600}
-                className="hover:text-green-500 transition cursor-pointer"
-              >
-                Experience
-              </ScrollLink>
-            </li>
-            <li>
-              <ScrollLink
-                to="projects"
-                smooth={true}
-                duration={600}
-                className="hover:text-green-500 transition cursor-pointer"
-              >
-                Projects
-              </ScrollLink>
-            </li>
-            <li>
-              <ScrollLink
-                to="awards"
-                smooth={true}
-                duration={600}
-                className="hover:text-green-500 transition cursor-pointer"
-              >
-                Awards
-              </ScrollLink>
-            </li>
-            <li>
-              <ScrollLink
-                to="contact"
-                smooth={true}
-                duration={600}
-                className="hover:text-green-500 transition cursor-pointer"
-              >
-                Contact
-              </ScrollLink>
-            </li>
+            {["home", "about", "skills", "experience", "projects", "awards", "contact"].map(
+              (item) => (
+                <li key={item}>
+                  <ScrollLink
+                    to={item}
+                    smooth={true}
+                    duration={600}
+                    className="hover:text-green-500 transition cursor-pointer"
+                  >
+                    {item.charAt(0).toUpperCase() + item.slice(1)}
+                  </ScrollLink>
+                </li>
+              )
+            )}
           </ul>
         </div>
 
-        {/* Let's Connect */}
         <div className="text-center md:text-right">
           <h4 className="text-white font-semibold mb-4">Let’s Connect</h4>
           <p className="mb-4">

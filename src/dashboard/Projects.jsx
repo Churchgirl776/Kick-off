@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { toast, Toaster } from "react-hot-toast";
 
 const Projects = ({ onUpdate }) => {
   const safeOnUpdate = typeof onUpdate === "function" ? onUpdate : () => {};
@@ -21,7 +22,7 @@ const Projects = ({ onUpdate }) => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editId, setEditId] = useState(null); // ✅ Track which project is being edited
+  const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -36,7 +37,7 @@ const Projects = ({ onUpdate }) => {
     imageUrl: "",
   });
 
-  // ✅ Fetch all projects
+  // ✅ Fetch all projects in real-time
   useEffect(() => {
     const q = query(collection(db, "projects"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(
@@ -47,42 +48,34 @@ const Projects = ({ onUpdate }) => {
         setLoading(false);
       },
       (error) => {
-        console.error("Error fetching projects:", error);
+        toast.error("Error fetching projects ❌");
         setLoading(false);
       }
     );
     return () => unsubscribe();
   }, []);
 
-  // ✅ Delete project
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      try {
-        await deleteDoc(doc(db, "projects", id));
-      } catch (err) {
-        console.error("Error deleting project:", err);
-      }
-    }
-  };
-
-  // ✅ Handle form inputs
+  // ✅ Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Save or Update project
+  // ✅ Add or update project
   const handleSaveProject = async () => {
     const { name, description } = formData;
     if (!name.trim() || !description.trim()) {
-      alert("Please fill in the required fields: Name and Description.");
+      toast.error("Please fill in the required fields.");
       return;
     }
 
     setSaving(true);
+    const toastId = toast.loading(
+      editId ? "Updating project..." : "Saving project..."
+    );
+
     try {
       if (editId) {
-        // ✅ Update existing project
         const projectRef = doc(db, "projects", editId);
         await updateDoc(projectRef, {
           ...formData,
@@ -92,8 +85,8 @@ const Projects = ({ onUpdate }) => {
             .filter(Boolean),
           updatedAt: serverTimestamp(),
         });
+        toast.success("Project updated successfully ✅", { id: toastId });
       } else {
-        // ✅ Add new project
         await addDoc(collection(db, "projects"), {
           ...formData,
           technologies: formData.technologies
@@ -102,9 +95,10 @@ const Projects = ({ onUpdate }) => {
             .filter(Boolean),
           createdAt: serverTimestamp(),
         });
+        toast.success("Project added successfully 🚀", { id: toastId });
       }
 
-      // ✅ Reset form and close modal
+      // Reset form
       setFormData({
         name: "",
         description: "",
@@ -120,14 +114,49 @@ const Projects = ({ onUpdate }) => {
       setEditId(null);
       setShowModal(false);
     } catch (err) {
-      console.error("Error saving project:", err);
-      alert("Error saving project. Check console for details.");
+      toast.error("Error saving project ❌", { id: toastId });
     } finally {
       setSaving(false);
     }
   };
 
-  // ✅ Start editing an existing project
+  // ✅ Delete project with confirmation toast
+  const handleDelete = (id) => {
+    toast((t) => (
+      <div>
+        <p className="text-sm font-medium mb-2">
+          Are you sure you want to delete this project?
+        </p>
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const deletingToast = toast.loading("Deleting project...");
+              try {
+                await deleteDoc(doc(db, "projects", id));
+                toast.success("Project deleted successfully 🗑️", {
+                  id: deletingToast,
+                });
+              } catch {
+                toast.error("Failed to delete project ❌", { id: deletingToast });
+              }
+            }}
+            className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="bg-gray-200 px-3 py-1 rounded text-sm hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ));
+  };
+
+  // ✅ Edit existing project
   const handleEdit = (project) => {
     setFormData({
       name: project.name || "",
@@ -149,6 +178,18 @@ const Projects = ({ onUpdate }) => {
 
   return (
     <div>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "#fff",
+            color: "#111",
+            border: "1px solid #e5e7eb",
+          },
+        }}
+      />
+
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -197,7 +238,7 @@ const Projects = ({ onUpdate }) => {
           <div className="divide-y divide-gray-200">
             {projects.length === 0 ? (
               <div className="text-center text-gray-500 py-6">
-                No projects found in Firestore.
+                No projects found.
               </div>
             ) : (
               projects.map((project) => (
