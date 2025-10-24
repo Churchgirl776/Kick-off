@@ -50,7 +50,7 @@ const Login = ({ onClose }) => {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           {/* Username */}
           <div className="relative">
-            <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaUser className="absolute left-1 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Username"
@@ -63,7 +63,7 @@ const Login = ({ onClose }) => {
 
           {/* Email */}
           <div className="relative">
-            <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaEnvelope className="absolute left-1 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="email"
               placeholder="Email"

@@ -1,5 +1,7 @@
-// components/Sidebar.jsx
+// Sidebar.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ Import for redirection
+import { getAuth, signOut } from "firebase/auth"; // ✅ Firebase logout
 import {
   FaProjectDiagram,
   FaTools,
@@ -17,7 +19,6 @@ import {
 const Sidebar = ({
   activeSection,
   setActiveSection,
-  onLogout,
   theme,
   toggleTheme,
 }) => {
@@ -25,6 +26,18 @@ const Sidebar = ({
   const [showSettings, setShowSettings] = useState(false);
   const [autosave, setAutosave] = useState(true);
   const [fontStyle, setFontStyle] = useState("Inter");
+
+  const navigate = useNavigate(); // ✅ Hook for navigation
+  const auth = getAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // ✅ Sign out from Firebase
+      navigate("/"); // ✅ Redirect to portfolio homepage
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   const sections = [
     { id: "overview", label: "Overview", icon: <FaProjectDiagram /> },
@@ -41,7 +54,7 @@ const Sidebar = ({
       <div className="md:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="text-gray-900 p-2 rounded bg-gray-200 hover:bg-gray-300 shadow-md"
+          className="text-gray-200 p-2 rounded bg-gray-200 hover:bg-gray-300 shadow-md"
         >
           {isOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
         </button>
@@ -49,13 +62,13 @@ const Sidebar = ({
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full bg-white shadow-lg z-40 transform transition-transform duration-300 flex flex-col justify-between ${
+        className={`fixed top-0 left-0 h-full bg-zinc-950 shadow-lg z-40 transform transition-transform duration-300 flex flex-col justify-between ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:w-64`}
       >
         {/* Top Section */}
         <div className="flex flex-col">
-          <div className="text-2xl font-bold text-center py-6 border-b border-gray-200">
+          <div className="text-2xl font-bold text-center py-6 border-b border-gray-200 text-gray-50">
             Admin Panel
           </div>
 
@@ -67,7 +80,7 @@ const Sidebar = ({
                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-green-100 hover:text-green-700 ${
                   activeSection === section.id
                     ? "bg-green-500 text-white"
-                    : "text-gray-700"
+                    : "text-gray-200"
                 }`}
               >
                 <span className="text-lg">{section.icon}</span>
@@ -78,10 +91,10 @@ const Sidebar = ({
         </div>
 
         {/* Settings + Logout Section */}
-        <div className="px-4 py-6 border-t border-gray-200">
+        <div className="px-4 py-6 border-t border-gray-200 text-gray-50">
           {/* Settings Toggle */}
           <div
-            className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition"
+            className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-zinc-800 transition"
             onClick={() => setShowSettings(!showSettings)}
           >
             <FaCog />
@@ -133,9 +146,9 @@ const Sidebar = ({
             </div>
           )}
 
-          {/* Logout Button */}
+          {/* ✅ Logout Button */}
           <button
-            onClick={onLogout}
+            onClick={handleLogout}
             className="mt-4 flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg w-full justify-center transition"
           >
             <FaSignOutAlt />

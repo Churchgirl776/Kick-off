@@ -1,6 +1,15 @@
-// components/managers/SkillsManager.jsx
 import React, { useState, useEffect } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 
 const Skills = ({ onUpdate }) => {
@@ -11,35 +20,45 @@ const Skills = ({ onUpdate }) => {
     name: "",
     category: "Technical",
     proficiency: 50,
-    icon: ""
+    icon: "",
+    description: "",
+    technologies: "",
   });
 
   const categories = ["Technical", "Soft", "Design", "Language", "Framework"];
 
+  // ✅ Real-time updates
   useEffect(() => {
-    fetchSkills();
-  }, []);
-
-  const fetchSkills = async () => {
-    try {
-      const q = query(collection(db, "skills"), orderBy("name"));
-      const querySnapshot = await getDocs(q);
-      const skillsData = querySnapshot.docs.map(doc => ({
+    const q = query(collection(db, "skills"), orderBy("name"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const skillsData = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
       setSkills(skillsData);
-    } catch (error) {
-      console.error("Error fetching skills:", error);
-    }
-  };
+      if (onUpdate) onUpdate();
+    });
+    return () => unsubscribe();
+  }, [onUpdate]);
 
+  // ✅ Handle Add/Edit
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const technologiesArray = formData.technologies
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
       const skillData = {
-        ...formData,
-        createdAt: new Date()
+        name: formData.name,
+        category: formData.category,
+        proficiency: Number(formData.proficiency),
+        icon: formData.icon,
+        description: formData.description,
+        technologies: technologiesArray,
+        updatedAt: serverTimestamp(),
+        ...(editingSkill ? {} : { createdAt: serverTimestamp() }),
       };
 
       if (editingSkill) {
@@ -54,73 +73,129 @@ const Skills = ({ onUpdate }) => {
         name: "",
         category: "Technical",
         proficiency: 50,
-        icon: ""
+        icon: "",
+        description: "",
+        technologies: "",
       });
-      fetchSkills();
-      onUpdate();
     } catch (error) {
       console.error("Error saving skill:", error);
     }
   };
 
+  // ✅ Handle Delete
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this skill?")) {
       try {
         await deleteDoc(doc(db, "skills", id));
-        fetchSkills();
-        onUpdate();
       } catch (error) {
         console.error("Error deleting skill:", error);
       }
     }
   };
 
+  // ✅ Handle Edit button (fixed)
+  const handleEdit = (skill) => {
+    setEditingSkill(skill);
+    setFormData({
+      name: skill.name || "",
+      category: skill.category || "Technical",
+      proficiency: skill.proficiency || 50,
+      icon: skill.icon || "",
+      description: skill.description || "",
+      technologies: (skill.technologies || []).join(", "),
+    });
+    setShowForm(true);
+  };
+
   return (
     <div>
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Skills</h2>
           <p className="text-gray-600">Manage your technical and soft skills</p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            setEditingSkill(null);
+            setFormData({
+              name: "",
+              category: "Technical",
+              proficiency: 50,
+              icon: "",
+              description: "",
+              technologies: "",
+            });
+            setShowForm(true);
+          }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
         >
           Add Skill
         </button>
       </div>
 
+      {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
             <h3 className="text-xl font-bold mb-4">
               {editingSkill ? "Edit Skill" : "Add New Skill"}
             </h3>
+
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Skill Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Skill Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Skill Name
+                </label>
                 <input
                   type="text"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
+              {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Short description..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) =>
+                    setFormData({ ...formData, category: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
 
+              {/* Proficiency */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Proficiency: {formData.proficiency}%
@@ -130,22 +205,49 @@ const Skills = ({ onUpdate }) => {
                   min="0"
                   max="100"
                   value={formData.proficiency}
-                  onChange={(e) => setFormData({ ...formData, proficiency: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      proficiency: parseInt(e.target.value),
+                    })
+                  }
                   className="w-full"
                 />
               </div>
 
+              {/* Icon */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Icon (emoji or URL)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Icon (emoji or URL)
+                </label>
                 <input
                   type="text"
                   value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) =>
+                    setFormData({ ...formData, icon: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="⚡ or https://..."
                 />
               </div>
 
+              {/* Technologies (comma-separated) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Technologies (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formData.technologies}
+                  onChange={(e) =>
+                    setFormData({ ...formData, technologies: e.target.value })
+                  }
+                  placeholder="e.g. React, Tailwind, Firebase"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Actions */}
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
@@ -153,13 +255,13 @@ const Skills = ({ onUpdate }) => {
                     setShowForm(false);
                     setEditingSkill(null);
                   }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   {editingSkill ? "Update Skill" : "Add Skill"}
                 </button>
@@ -169,27 +271,58 @@ const Skills = ({ onUpdate }) => {
         </div>
       )}
 
+      {/* Skill Cards */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {skills.map((skill) => (
-          <div key={skill.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+          <div
+            key={skill.id}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
                 {skill.icon && (
                   <span className="text-2xl">
                     {skill.icon.startsWith("http") ? (
-                      <img src={skill.icon} alt={skill.name} className="w-8 h-8" />
+                      <img
+                        src={skill.icon}
+                        alt={skill.name}
+                        className="w-8 h-8"
+                      />
                     ) : (
                       skill.icon
                     )}
                   </span>
                 )}
-                <h3 className="font-semibold text-lg text-gray-900">{skill.name}</h3>
+                <h3 className="font-semibold text-lg text-gray-900">
+                  {skill.name}
+                </h3>
               </div>
               <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
                 {skill.category}
               </span>
             </div>
-            
+
+            {skill.description && (
+              <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+                {skill.description}
+              </p>
+            )}
+
+            {/* Technologies Pills */}
+            {skill.technologies && skill.technologies.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {skill.technologies.map((tech, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full border border-gray-200"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Proficiency */}
             <div className="mb-4">
               <div className="flex justify-between text-sm text-gray-600 mb-1">
                 <span>Proficiency</span>
@@ -203,20 +336,17 @@ const Skills = ({ onUpdate }) => {
               </div>
             </div>
 
+            {/* Actions */}
             <div className="flex space-x-2">
               <button
-                onClick={() => {
-                  setEditingSkill(skill);
-                  setFormData(skill);
-                  setShowForm(true);
-                }}
-                className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                onClick={() => handleEdit(skill)}
+                className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-blue-700"
               >
                 Edit
               </button>
               <button
                 onClick={() => handleDelete(skill.id)}
-                className="flex-1 bg-red-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-red-700 transition-colors"
+                className="flex-1 bg-red-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-red-700"
               >
                 Delete
               </button>

@@ -1,309 +1,328 @@
 // components/managers/ProjectsManager.jsx
 import React, { useState, useEffect } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
 
 const Projects = ({ onUpdate }) => {
+  const safeOnUpdate = typeof onUpdate === "function" ? onUpdate : () => {};
+
   const [projects, setProjects] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingProject, setEditingProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState(null); // ✅ Track which project is being edited
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     status: "On track",
-    progress: "SCR completed",
+    progress: "",
     date: "",
     owner: "",
     technologies: "",
     liveUrl: "",
     githubUrl: "",
-    imageUrl: ""
+    imageUrl: "",
   });
 
+  // ✅ Fetch all projects
   useEffect(() => {
-    fetchProjects();
+    const q = query(collection(db, "projects"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setProjects(data);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching projects:", error);
+        setLoading(false);
+      }
+    );
+    return () => unsubscribe();
   }, []);
 
-  const fetchProjects = async () => {
-    try {
-      const q = query(collection(db, "projects"), orderBy("date", "desc"));
-      const querySnapshot = await getDocs(q);
-      const projectsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setProjects(projectsData);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
+  // ✅ Delete project
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this project?")) {
+      try {
+        await deleteDoc(doc(db, "projects", id));
+      } catch (err) {
+        console.error("Error deleting project:", err);
+      }
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const projectData = {
-        ...formData,
-        technologies: formData.technologies.split(",").map(tech => tech.trim()),
-        createdAt: new Date()
-      };
+  // ✅ Handle form inputs
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-      if (editingProject) {
-        await updateDoc(doc(db, "projects", editingProject.id), projectData);
+  // ✅ Save or Update project
+  const handleSaveProject = async () => {
+    const { name, description } = formData;
+    if (!name.trim() || !description.trim()) {
+      alert("Please fill in the required fields: Name and Description.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (editId) {
+        // ✅ Update existing project
+        const projectRef = doc(db, "projects", editId);
+        await updateDoc(projectRef, {
+          ...formData,
+          technologies: formData.technologies
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+          updatedAt: serverTimestamp(),
+        });
       } else {
-        await addDoc(collection(db, "projects"), projectData);
+        // ✅ Add new project
+        await addDoc(collection(db, "projects"), {
+          ...formData,
+          technologies: formData.technologies
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+          createdAt: serverTimestamp(),
+        });
       }
 
-      setShowForm(false);
-      setEditingProject(null);
+      // ✅ Reset form and close modal
       setFormData({
         name: "",
         description: "",
         status: "On track",
-        progress: "SCR completed",
+        progress: "",
         date: "",
         owner: "",
         technologies: "",
         liveUrl: "",
         githubUrl: "",
-        imageUrl: ""
+        imageUrl: "",
       });
-      fetchProjects();
-      onUpdate();
-    } catch (error) {
-      console.error("Error saving project:", error);
+      setEditId(null);
+      setShowModal(false);
+    } catch (err) {
+      console.error("Error saving project:", err);
+      alert("Error saving project. Check console for details.");
+    } finally {
+      setSaving(false);
     }
   };
 
+  // ✅ Start editing an existing project
   const handleEdit = (project) => {
-    setEditingProject(project);
     setFormData({
-      ...project,
-      technologies: project.technologies.join(", ")
+      name: project.name || "",
+      description: project.description || "",
+      status: project.status || "On track",
+      progress: project.progress || "",
+      date: project.date || "",
+      owner: project.owner || "",
+      technologies: Array.isArray(project.technologies)
+        ? project.technologies.join(", ")
+        : project.technologies || "",
+      liveUrl: project.liveUrl || "",
+      githubUrl: project.githubUrl || "",
+      imageUrl: project.imageUrl || "",
     });
-    setShowForm(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      try {
-        await deleteDoc(doc(db, "projects", id));
-        fetchProjects();
-        onUpdate();
-      } catch (error) {
-        console.error("Error deleting project:", error);
-      }
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "On track":
-        return "bg-green-100 text-green-800";
-      case "All files":
-        return "bg-blue-100 text-blue-800";
-      case "Delayed":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+    setEditId(project.id);
+    setShowModal(true);
   };
 
   return (
     <div>
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
           <p className="text-gray-600">Manage your portfolio projects</p>
         </div>
+
         <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+          onClick={() => {
+            setEditId(null);
+            setFormData({
+              name: "",
+              description: "",
+              status: "On track",
+              progress: "",
+              date: "",
+              owner: "",
+              technologies: "",
+              liveUrl: "",
+              githubUrl: "",
+              imageUrl: "",
+            });
+            setShowModal(true);
+          }}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
         >
-          Add Project
+          + Add Project
         </button>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">
-              {editingProject ? "Edit Project" : "Add New Project"}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="On track">On track</option>
-                    <option value="All files">All files</option>
-                    <option value="Delayed">Delayed</option>
-                  </select>
-                </div>
-              </div>
+      {/* Project List */}
+      {loading ? (
+        <div className="p-6 bg-white rounded-xl shadow text-center">
+          Loading projects...
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+            <div className="col-span-4">Name</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-2">Progress</div>
+            <div className="col-span-2">Date</div>
+            <div className="col-span-2 text-right">Actions</div>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+          <div className="divide-y divide-gray-200">
+            {projects.length === 0 ? (
+              <div className="text-center text-gray-500 py-6">
+                No projects found in Firestore.
               </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Progress</label>
-                  <input
-                    type="text"
-                    value={formData.progress}
-                    onChange={(e) => setFormData({ ...formData, progress: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.owner}
-                    onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Technologies (comma separated)</label>
-                  <input
-                    type="text"
-                    value={formData.technologies}
-                    onChange={(e) => setFormData({ ...formData, technologies: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Live URL</label>
-                  <input
-                    type="url"
-                    value={formData.liveUrl}
-                    onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">GitHub URL</label>
-                  <input
-                    type="url"
-                    value={formData.githubUrl}
-                    onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingProject(null);
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            ) : (
+              projects.map((project) => (
+                <div
+                  key={project.id}
+                  className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  {editingProject ? "Update Project" : "Add Project"}
-                </button>
-              </div>
-            </form>
+                  <div className="col-span-4">
+                    <div className="font-medium text-gray-900">
+                      {project.name}
+                    </div>
+                    <div className="text-sm text-gray-500 truncate">
+                      {project.description}
+                    </div>
+                  </div>
+                  <div className="col-span-2 text-gray-600">
+                    {project.status}
+                  </div>
+                  <div className="col-span-2 text-gray-600">
+                    {project.progress}
+                  </div>
+                  <div className="col-span-2 text-gray-600">
+                    {project.date}
+                  </div>
+                  <div className="col-span-2 flex justify-end items-center gap-3">
+                    <button
+                      onClick={() => handleEdit(project)}
+                      className="text-blue-500 hover:text-blue-700"
+                      title="Edit Project"
+                    >
+                      <FiEdit size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(project.id)}
+                      className="text-red-500 hover:text-red-700"
+                      title="Delete Project"
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
-          <div className="col-span-4">Name</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-2">Progress</div>
-          <div className="col-span-2">Date</div>
-          <div className="col-span-2">Actions</div>
-        </div>
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg relative">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              {editId ? "Edit Project" : "Add New Project"}
+            </h3>
 
-        <div className="divide-y divide-gray-200">
-          {projects.map((project) => (
-            <div key={project.id} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-              <div className="col-span-4">
-                <div className="font-medium text-gray-900">{project.name}</div>
-                <div className="text-sm text-gray-500 truncate">{project.description}</div>
-              </div>
-              <div className="col-span-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                  {project.status}
-                </span>
-              </div>
-              <div className="col-span-2 text-gray-600">{project.progress}</div>
-              <div className="col-span-2 text-gray-600">{project.date}</div>
-              <div className="col-span-2 flex space-x-2">
-                <button
-                  onClick={() => handleEdit(project)}
-                  className="text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(project.id)}
-                  className="text-red-600 hover:text-red-800 transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
+            <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+              {[
+                { name: "name", placeholder: "Project Name *" },
+                {
+                  name: "description",
+                  placeholder: "Project Description *",
+                  textarea: true,
+                },
+                { name: "status", placeholder: "Status" },
+                { name: "progress", placeholder: "Progress" },
+                { name: "date", placeholder: "Date", type: "date" },
+                { name: "owner", placeholder: "Owner" },
+                {
+                  name: "technologies",
+                  placeholder: "Technologies (comma-separated)",
+                },
+                { name: "liveUrl", placeholder: "Live URL" },
+                { name: "githubUrl", placeholder: "GitHub URL" },
+                { name: "imageUrl", placeholder: "Image URL" },
+              ].map((field) =>
+                field.textarea ? (
+                  <textarea
+                    key={field.name}
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                ) : (
+                  <input
+                    key={field.name}
+                    type={field.type || "text"}
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                )
+              )}
             </div>
-          ))}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setEditId(null);
+                }}
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProject}
+                disabled={saving}
+                className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+              >
+                {saving
+                  ? editId
+                    ? "Updating..."
+                    : "Saving..."
+                  : editId
+                  ? "Update Project"
+                  : "Save Project"}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 // components/Dashboard.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase/firebaseConfig";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,7 @@ import SkillsManager from "./Skills";
 import AwardsManager from "./Awards";
 import ExperienceManager from "./Experience";
 import SocialMediaManager from "./SocialMedia";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Dashboard = () => {
@@ -22,23 +22,43 @@ const Dashboard = () => {
     experience: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Secure dashboard
+  // Secure dashboard: redirect if not logged in
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) navigate("/"); // redirect if not logged in
+      if (!user) navigate("/");
     });
     return unsubscribe;
   }, [navigate]);
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigate("/");
-  };
-
-  // Fetch stats from Firestore
-  const fetchStats = async () => {
+  // Real-time listeners for stats (auto-updates when collections change)
+  useEffect(() => {
     setLoading(true);
+    const collections = ["projects", "skills", "awards", "experience"];
+
+    const unsubscribers = collections.map((colName) => {
+      const colRef = collection(db, colName);
+      return onSnapshot(
+        colRef,
+        (snap) => {
+          setStats((prev) => ({ ...prev, [colName]: snap.size }));
+          setLoading(false);
+        },
+        (err) => {
+          console.error(`Realtime error listening to ${colName}:`, err);
+          setLoading(false);
+        }
+      );
+    });
+
+    // cleanup
+    return () => unsubscribers.forEach((u) => u && u());
+  }, []);
+
+  // Manual refresh (uses getDocs)
+  const fetchStats = useCallback(async () => {
+    setRefreshing(true);
     try {
       const [projectsSnap, skillsSnap, awardsSnap, experienceSnap] =
         await Promise.all([
@@ -57,12 +77,21 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
-    setLoading(false);
-  };
+    setRefreshing(false);
+  }, []);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await signOut(auth);
+      navigate("/");
+    } catch (err) {
+      console.error("Error signing out:", err);
+    }
+  }, [navigate]);
 
   // Render section content
   const renderContent = () => {
@@ -76,13 +105,12 @@ const Dashboard = () => {
       case "experience":
         return <ExperienceManager onUpdate={fetchStats} />;
       case "social":
-        return <SocialMediaManager />;
+        return <SocialMediaManager onUpdate={fetchStats} />;
       default:
         return null;
     }
   };
 
-  // Animated card variant
   const cardVariant = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
@@ -94,20 +122,27 @@ const Dashboard = () => {
       <Sidebar
         activeSection={activeSection}
         setActiveSection={setActiveSection}
+        handleLogout={handleLogout} // ✅ pass logout handler to Sidebar
       />
 
       {/* Main Content */}
-      <div className="flex-1 p-6 bg-gray-50 min-h-screen overflow-auto ml-64">
+      <div className="flex-1 p-6 bg-zinc-300 min-h-screen overflow-auto ml-64">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-3 md:mb-0">
             Admin Dashboard
           </h1>
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            Logout
-          </button>
+
+          {/* ✅ Only Refresh button remains */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchStats}
+              disabled={refreshing}
+              aria-label="Refresh stats"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
 
         {/* Overview Section */}
@@ -126,9 +161,7 @@ const Dashboard = () => {
                   <h3 className="font-semibold text-lg mb-2 text-gray-900">
                     Projects
                   </h3>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {stats.projects}
-                  </p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.projects}</p>
                   <p className="text-gray-500 text-sm">Total projects</p>
                 </motion.div>
 
@@ -141,9 +174,7 @@ const Dashboard = () => {
                   <h3 className="font-semibold text-lg mb-2 text-gray-900">
                     Skills
                   </h3>
-                  <p className="text-2xl font-bold text-green-600">
-                    {stats.skills}
-                  </p>
+                  <p className="text-2xl font-bold text-green-600">{stats.skills}</p>
                   <p className="text-gray-500 text-sm">Technical skills</p>
                 </motion.div>
 
@@ -156,9 +187,7 @@ const Dashboard = () => {
                   <h3 className="font-semibold text-lg mb-2 text-gray-900">
                     Awards
                   </h3>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {stats.awards}
-                  </p>
+                  <p className="text-2xl font-bold text-purple-600">{stats.awards}</p>
                   <p className="text-gray-500 text-sm">Achievements</p>
                 </motion.div>
 
@@ -171,9 +200,7 @@ const Dashboard = () => {
                   <h3 className="font-semibold text-lg mb-2 text-gray-900">
                     Experience
                   </h3>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {stats.experience}
-                  </p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.experience}</p>
                   <p className="text-gray-500 text-sm">Work experience</p>
                 </motion.div>
               </>

@@ -2,10 +2,11 @@ import React from "react";
 import Navbar from "../Components/Navbar";
 import Hero from "./Hero";
 import About from "./About";
-import Skills from "./Skills";
+import PortfolioSkill from "./PortfolioSkill";
 import Experience from "./Experience";
-import Projects from "./Projects";
+import PortfolioProject from "./PortfolioProject";
 import Awards from "./Awards";
+import PortfolioAwards from "./PortfolioAwards";
 import Contact from "./Contact"; // Updated contact page with toast + smooth scroll
 
 // Scroll provider for smooth scroll effects
@@ -30,20 +31,26 @@ function Portfolio() {
         <About />
       </Element>
 
-      <Element name="skills">
-        <Skills />
+
+      <Element name="portfolioskills">
+        <PortfolioSkill />
       </Element>
 
       <Element name="experience">
         <Experience />
       </Element>
 
-      <Element name="projects">
-        <Projects />
+
+       <Element name="portfolioproject">
+        <PortfolioProject />
       </Element>
 
       <Element name="awards">
         <Awards />
+      </Element>
+
+      <Element name="portfolioawards">
+        <PortfolioAwards />
       </Element>
 
       <Element name="contact">
