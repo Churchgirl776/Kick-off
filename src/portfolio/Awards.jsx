@@ -65,7 +65,7 @@ const PortfolioAwards = () => {
   return (
 
     <div className="bg-zinc-950">
-    <section className="bg-zinc-950 text-white py-12 px-4 md:px-16 flex justify-center">
+    <section className="bg-zinc-950 text-white py-12 px-4 md:px-16 flex justify-center" id="awards">
 
   
       <div className="max-w-7xl w-full">

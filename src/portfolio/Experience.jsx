@@ -19,7 +19,7 @@ const Experience = () => {
   }, []);
 
   return (
-    <section className="flex flex-col items-center bg-black text-white py-16 px-4 md:px-20 relative">
+    <section className="flex flex-col items-center bg-black text-white py-16 px-4 md:px-20 relative" id="experience">
       {/* Section Header */}
       <h1 className="text-center text-4xl font-light mb-12">
         Professional{" "}

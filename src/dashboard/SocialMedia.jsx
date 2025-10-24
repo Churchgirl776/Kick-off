@@ -1,172 +1,220 @@
-import React, { useState, useEffect } from "react";
-import { db } from "../firebase/firebaseConfig";
+import React, { useEffect, useState } from "react";
 import {
   collection,
   addDoc,
+  updateDoc,
   deleteDoc,
   doc,
   onSnapshot,
   query,
   orderBy,
 } from "firebase/firestore";
-import { motion } from "framer-motion";
-import { toast, Toaster } from "react-hot-toast";
+import { db } from "../firebase/firebaseConfig";
+import {
+  FaFacebookF,
+  FaTwitter,
+  FaInstagram,
+  FaLinkedinIn,
+  FaGithub,
+  FaYoutube,
+  FaGlobe,
+  FaPlus,
+  FaEdit,
+  FaTrash,
+} from "react-icons/fa";
 
-const SocialMedia = () => {
+const iconMap = {
+  facebook: <FaFacebookF />,
+  twitter: <FaTwitter />,
+  instagram: <FaInstagram />,
+  linkedin: <FaLinkedinIn />,
+  github: <FaGithub />,
+  youtube: <FaYoutube />,
+  website: <FaGlobe />,
+};
+
+const SocialMedia = ({ theme = "light" }) => {
+  const [links, setLinks] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingLink, setEditingLink] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     displayName: "",
     url: "",
   });
 
-  const [socialLinks, setSocialLinks] = useState([]);
-
-  // 🔹 Fetch social media links from Firestore
+  // 🔹 Firestore real-time listener
   useEffect(() => {
     const q = query(collection(db, "socialMedia"), orderBy("name", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const links = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setSocialLinks(links);
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setLinks(data);
     });
     return () => unsubscribe();
   }, []);
 
-  // 🔹 Handle input change
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleOpenForm = (link = null) => {
+    if (link) {
+      setEditingLink(link);
+      setFormData({
+        name: link.name,
+        displayName: link.displayName,
+        url: link.url,
+      });
+    } else {
+      setEditingLink(null);
+      setFormData({ name: "", displayName: "", url: "" });
+    }
+    setShowForm(true);
+  };
 
-  // 🔹 Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.url) {
-      toast.error("Please fill in all required fields!");
+  const handleSave = async () => {
+    const { name, displayName, url } = formData;
+    if (!name || !url) {
+      alert("Please fill out all required fields.");
       return;
     }
 
     try {
-      await addDoc(collection(db, "socialMedia"), formData);
-      toast.success(`${formData.displayName || formData.name} added successfully!`);
+      if (editingLink) {
+        await updateDoc(doc(db, "socialMedia", editingLink.id), {
+          name,
+          displayName,
+          url,
+        });
+      } else {
+        await addDoc(collection(db, "socialMedia"), { name, displayName, url });
+      }
+      setShowForm(false);
+      setEditingLink(null);
       setFormData({ name: "", displayName: "", url: "" });
-    } catch (err) {
-      console.error("Error adding social link:", err);
-      toast.error("Failed to add social media link. Try again!");
+    } catch (error) {
+      console.error("Error saving link:", error);
     }
   };
 
-  // 🔹 Handle delete
-  const handleDelete = async (id, name) => {
-    const confirmDelete = confirm(`Delete ${name}?`);
-    if (!confirmDelete) return;
-
-    try {
-      await deleteDoc(doc(db, "socialMedia", id));
-      toast.success(`${name} deleted successfully!`);
-    } catch (err) {
-      console.error("Error deleting link:", err);
-      toast.error("Failed to delete link.");
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this social media link?")) {
+      try {
+        await deleteDoc(doc(db, "socialMedia", id));
+      } catch (error) {
+        console.error("Error deleting link:", error);
+      }
     }
   };
+
+  // Theme classes
+  const bgMain = theme === "dark" ? "bg-zinc-900 text-gray-100" : "bg-gray-50 text-gray-900";
+  const cardBg = theme === "dark" ? "bg-zinc-800 border-zinc-700" : "bg-white border-gray-200";
+  const inputBg = theme === "dark" ? "bg-zinc-700 text-gray-100 border-zinc-600 placeholder-gray-400" : "bg-gray-100 text-black border-gray-300 placeholder-gray-500";
+  const modalBg = theme === "dark" ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-black border-gray-300";
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 py-16 px-6 sm:px-10 lg:px-20">
-      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-
-      <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10">
-        Manage <span className="text-green-600">Social Media Links</span>
+    <section className={`flex flex-col items-center py-16 px-6 md:px-12 ${bgMain}`}>
+      <h2 className="text-3xl md:text-4xl font-semibold mb-4 text-center">
+        Manage Your <span className="text-emerald-600">Social Media</span>
       </h2>
+      <p className={theme === "dark" ? "text-gray-300 text-center mb-10 max-w-xl" : "text-gray-600 text-center mb-10 max-w-xl"}>
+        Add, edit, or delete your social media handles dynamically — changes update in real time.
+      </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Form Section */}
-        <motion.form
-          onSubmit={handleSubmit}
-          whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.2 }}
-          className="bg-white p-8 rounded-xl shadow-md space-y-5 border border-gray-200"
-        >
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">
-            Add New Social Media
-          </h3>
-
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Platform (e.g., LinkedIn)"
-            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-
-          <input
-            type="text"
-            name="displayName"
-            value={formData.displayName}
-            onChange={handleChange}
-            placeholder="Display Name (optional)"
-            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-
-          <input
-            type="url"
-            name="url"
-            value={formData.url}
-            onChange={handleChange}
-            placeholder="Profile URL (e.g., https://linkedin.com/in/username)"
-            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-
-          <motion.button
-            type="submit"
-            whileTap={{ scale: 0.95 }}
-            className="w-full bg-green-500 text-white font-semibold py-3 rounded hover:bg-green-600 transition"
-          >
-            Add Social Media
-          </motion.button>
-        </motion.form>
-
-        {/* Display Section */}
-        <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Your Links</h3>
-
-          {socialLinks.length > 0 ? (
-            <ul className="space-y-4">
-              {socialLinks.map((link) => (
-                <li
-                  key={link.id}
-                  className="flex justify-between items-center border p-3 rounded hover:shadow-md transition"
+      {/* Social Links */}
+      <div className="flex flex-wrap justify-center gap-6 mb-12">
+        {links.length === 0 ? (
+          <p className={theme === "dark" ? "text-gray-400" : "text-gray-500"}>No social media links yet.</p>
+        ) : (
+          links.map((link) => (
+            <div
+              key={link.id}
+              className={`group flex flex-col items-center text-center p-5 rounded-lg border ${cardBg} hover:border-emerald-400 hover:shadow-lg transition-all duration-300`}
+            >
+              <div className="text-2xl text-emerald-500 group-hover:text-emerald-400 transition mb-2">
+                {iconMap[link.name.toLowerCase()] || <FaGlobe />}
+              </div>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium hover:text-emerald-600 transition"
+              >
+                {link.displayName || link.name}
+              </a>
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => handleOpenForm(link)}
+                  className="text-sm bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1.5 rounded-md flex items-center gap-1 transition"
                 >
-                  <div>
-                    <p className="font-semibold text-gray-700">
-                      {link.displayName || link.name}
-                    </p>
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-green-600 hover:underline"
-                    >
-                      {link.url}
-                    </a>
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleDelete(link.id, link.name)}
-                    className="text-red-500 hover:text-red-700 font-semibold"
-                  >
-                    Delete
-                  </motion.button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 text-sm">No social media links added yet.</p>
-          )}
-        </div>
+                  <FaEdit /> Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(link.id)}
+                  className="text-sm bg-red-500 hover:bg-red-400 text-white px-3 py-1.5 rounded-md flex items-center gap-1 transition"
+                >
+                  <FaTrash /> Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
-    </div>
+
+      <button
+        onClick={() => handleOpenForm()}
+        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-3 rounded-lg transition"
+      >
+        <FaPlus /> Add Social Media
+      </button>
+
+      {/* Modal Form */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+          <div className={`rounded-xl p-8 w-full max-w-lg relative shadow-xl border ${modalBg}`}>
+            <h3 className="text-2xl font-semibold mb-4 text-emerald-600">
+              {editingLink ? "Edit Social Media" : "Add New Social Media"}
+            </h3>
+            <button
+              onClick={() => setShowForm(false)}
+              className="absolute top-4 right-5 text-gray-500 hover:text-gray-800 text-xl"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Platform Name (e.g. github, linkedin)"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className={`w-full p-3 rounded-lg focus:border-emerald-500 outline-none ${inputBg}`}
+              />
+              <input
+                type="text"
+                placeholder="Display Name (e.g. GitHub, LinkedIn)"
+                value={formData.displayName}
+                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                className={`w-full p-3 rounded-lg focus:border-emerald-500 outline-none ${inputBg}`}
+              />
+              <input
+                type="text"
+                placeholder="Profile URL"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                className={`w-full p-3 rounded-lg focus:border-emerald-500 outline-none ${inputBg}`}
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleSave}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2 rounded-lg transition"
+              >
+                {editingLink ? "Update" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 };
 

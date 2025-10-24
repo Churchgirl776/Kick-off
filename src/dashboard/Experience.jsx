@@ -10,16 +10,10 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import {
-  FaBriefcase,
-  FaCalendarAlt,
-  FaEdit,
-  FaTrash,
-  FaPlus,
-} from "react-icons/fa";
+import { FaBriefcase, FaCalendarAlt, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { toast, Toaster } from "react-hot-toast";
 
-const Experience = () => {
+const Experience = ({ theme = "light" }) => {
   const [experiences, setExperiences] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingExp, setEditingExp] = useState(null);
@@ -30,7 +24,7 @@ const Experience = () => {
     services: "",
   });
 
-  // 🔹 Load experiences from Firestore in real-time
+  // 🔹 Real-time Firestore listener
   useEffect(() => {
     const q = query(collection(db, "experience"), orderBy("year", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -43,7 +37,6 @@ const Experience = () => {
     return () => unsubscribe();
   }, []);
 
-  // 🔹 Open modal for add/edit
   const handleOpenForm = (exp = null) => {
     if (exp) {
       setEditingExp(exp);
@@ -60,7 +53,6 @@ const Experience = () => {
     setShowForm(true);
   };
 
-  // 🔹 Save to Firestore (Add or Update)
   const handleSave = async () => {
     const newExp = {
       title: formData.title.trim(),
@@ -98,10 +90,9 @@ const Experience = () => {
     }
   };
 
-  // 🔹 Delete experience with confirmation toast
   const handleDelete = async (id) => {
     toast((t) => (
-      <div>
+      <div className={theme === "dark" ? "text-white" : ""}>
         <p className="text-sm font-medium mb-2">
           Are you sure you want to delete this experience?
         </p>
@@ -114,9 +105,7 @@ const Experience = () => {
                 await deleteDoc(doc(db, "experience", id));
                 toast.success("Experience deleted 🗑️", { id: deletingToast });
               } catch (err) {
-                toast.error("Error deleting experience ❌", {
-                  id: deletingToast,
-                });
+                toast.error("Error deleting experience ❌", { id: deletingToast });
               }
             }}
             className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
@@ -134,20 +123,22 @@ const Experience = () => {
     ));
   };
 
+  // Theme classes
+  const bgMain = theme === "dark" ? "bg-zinc-900 text-gray-100" : "bg-transparent text-black";
+  const cardBg = theme === "dark" ? "bg-zinc-800 border-zinc-700" : "bg-transparent border-gray-800";
+  const inputBg = theme === "dark" ? "bg-zinc-700 text-gray-100 border-zinc-600 placeholder-gray-400" : "bg-gray-100 text-black border-gray-300 placeholder-gray-500";
+  const modalBg = theme === "dark" ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-black border-gray-300";
+
   return (
-    <section
-      id="experience"
-      className="py-16 px-6 md:px-12 bg-transparent text-black flex flex-col items-center"
-    >
-      {/* Toast Container */}
+    <section className={`py-16 px-6 md:px-12 flex flex-col items-center ${bgMain}`}>
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: "#fff",
-            color: "#111",
-            border: "1px solid #e5e7eb",
+            background: theme === "dark" ? "#111" : "#fff",
+            color: theme === "dark" ? "#fff" : "#111",
+            border: theme === "dark" ? "1px solid #555" : "1px solid #e5e7eb",
           },
         }}
       />
@@ -155,28 +146,22 @@ const Experience = () => {
       <div className="w-full max-w-6xl">
         {/* Header */}
         <h2 className="text-3xl md:text-4xl font-semibold text-center mb-3">
-          Professional <span className="text-green-900">Experience</span>
+          Professional <span className="text-emerald-400">Experience</span>
         </h2>
-        <p className="text-gray-900 text-center mb-12 max-w-2xl mx-auto">
-          Manage and showcase your career journey dynamically — add, edit, or
-          delete experiences easily.
+        <p className={theme === "dark" ? "text-gray-300 text-center mb-12 max-w-2xl mx-auto" : "text-gray-900 text-center mb-12 max-w-2xl mx-auto"}>
+          Manage and showcase your career journey dynamically — add, edit, or delete experiences easily.
         </p>
 
         {/* Experience Cards */}
         <div className="space-y-10">
           {experiences.length === 0 ? (
-            <p className="text-gray-900 text-center">
+            <p className={theme === "dark" ? "text-gray-300 text-center" : "text-gray-900 text-center"}>
               No experience added yet. Click below to get started.
             </p>
           ) : (
             experiences.map((exp) => (
-              <div
-                key={exp.id}
-                className="relative bg-transparent border border-gray-800 rounded-xl p-8 hover:border-emerald-400 transition-all duration-300"
-              >
+              <div key={exp.id} className={`relative rounded-xl p-8 hover:border-emerald-400 transition-all duration-300 border ${cardBg}`}>
                 <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-400 to-cyan-500 rounded-l-lg"></div>
-
-                {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
                   <div>
                     <h3 className="text-xl font-bold flex items-center gap-2">
@@ -191,11 +176,9 @@ const Experience = () => {
                 </div>
 
                 {/* Services */}
-                <ul className="list-disc list-inside text-gray-800 text-sm space-y-1 mb-4">
+                <ul className={theme === "dark" ? "list-disc list-inside text-gray-300 text-sm space-y-1 mb-4" : "list-disc list-inside text-gray-800 text-sm space-y-1 mb-4"}>
                   {exp.services?.map((service, i) => (
-                    <li key={i} className="hover:text-emerald-400 transition">
-                      {service}
-                    </li>
+                    <li key={i} className="hover:text-emerald-400 transition">{service}</li>
                   ))}
                 </ul>
 
@@ -233,7 +216,7 @@ const Experience = () => {
       {/* Modal Form */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
-          <div className="bg-white border border-gray-300 rounded-xl p-8 w-full max-w-lg relative shadow-lg">
+          <div className={`rounded-xl p-8 w-full max-w-lg relative shadow-lg border ${modalBg}`}>
             <h3 className="text-2xl font-semibold mb-4 text-emerald-600">
               {editingExp ? "Edit Experience" : "Add New Experience"}
             </h3>
@@ -251,37 +234,29 @@ const Experience = () => {
                 type="text"
                 placeholder="Job Title"
                 value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                className="w-full p-3 bg-gray-100 border border-gray-300 rounded-lg focus:border-emerald-400 outline-none"
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className={`w-full p-3 rounded-lg focus:border-emerald-400 outline-none ${inputBg}`}
               />
               <input
                 type="text"
                 placeholder="Company"
                 value={formData.company}
-                onChange={(e) =>
-                  setFormData({ ...formData, company: e.target.value })
-                }
-                className="w-full p-3 bg-gray-100 border border-gray-300 rounded-lg focus:border-emerald-400 outline-none"
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                className={`w-full p-3 rounded-lg focus:border-emerald-400 outline-none ${inputBg}`}
               />
               <input
                 type="text"
                 placeholder="Year of Service (e.g. 2021 - 2023)"
                 value={formData.year}
-                onChange={(e) =>
-                  setFormData({ ...formData, year: e.target.value })
-                }
-                className="w-full p-3 bg-gray-100 border border-gray-300 rounded-lg focus:border-emerald-400 outline-none"
+                onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                className={`w-full p-3 rounded-lg focus:border-emerald-400 outline-none ${inputBg}`}
               />
               <textarea
                 placeholder="List of services (one per line)"
                 value={formData.services}
-                onChange={(e) =>
-                  setFormData({ ...formData, services: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, services: e.target.value })}
                 rows="4"
-                className="w-full p-3 bg-gray-100 border border-gray-300 rounded-lg focus:border-emerald-400 outline-none"
+                className={`w-full p-3 rounded-lg focus:border-emerald-400 outline-none ${inputBg}`}
               ></textarea>
             </div>
 

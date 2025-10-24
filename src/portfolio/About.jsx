@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 const About = () => {
   return (
-    <section className="bg-black-1/4 backdrop-opacity-95 text-white py-16 px-16 md:px-16 flex flex-col md:flex-row items-center md:items-center justify-center gap-10">
+    <section className="bg-black-1/4 backdrop-opacity-95 text-white py-16 px-16 md:px-16 flex flex-col md:flex-row items-center md:items-center justify-center gap-10" id="about">
   {/* Left Side - Image */}
 <motion.div
   className="relative flex-shrink-0"

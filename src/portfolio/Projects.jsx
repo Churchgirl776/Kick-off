@@ -19,7 +19,7 @@ const PortfolioProjects = () => {
   }, []);
 
   return (
-    <section className="py-20 px-6 md:px-12 bg-black text-white">
+    <section className="py-20 px-6 md:px-12 bg-black text-white" id="projects">
       {/* ✅ Centered Container */}
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">

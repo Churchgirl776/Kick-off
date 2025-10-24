@@ -74,7 +74,7 @@ const Contact = () => {
   const scrollToTop = () => scroll.scrollToTop({ smooth: true, duration: 600 });
 
   return (
-    <div className="bg-black text-gray-200 min-h-screen py-16 px-6 sm:px-10 lg:px-20">
+    <div className="bg-black text-gray-200 min-h-screen py-16 px-6 sm:px-10 lg:px-20" id="contact">
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
 
       {/* Header */}

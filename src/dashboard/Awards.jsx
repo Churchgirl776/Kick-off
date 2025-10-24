@@ -13,7 +13,7 @@ import {
 import { db } from "../firebase/firebaseConfig";
 import { toast, Toaster } from "react-hot-toast";
 
-const Awards = () => {
+const Awards = ({ theme = "light" }) => {
   const [awards, setAwards] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingAward, setEditingAward] = useState(null);
@@ -24,7 +24,7 @@ const Awards = () => {
     description: "",
   });
 
-  // 🔄 Real-time listener for awards
+  // 🔄 Real-time listener
   useEffect(() => {
     const q = query(collection(db, "awards"), orderBy("year", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -40,17 +40,14 @@ const Awards = () => {
   // 💾 Add / Update Award
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const { icon, year, title, description } = formData;
     if (!year || !title) {
       toast.error("Please fill in at least Year and Title.");
       return;
     }
-
     const toastId = toast.loading(
       editingAward ? "Updating award..." : "Adding award..."
     );
-
     try {
       const awardData = {
         icon,
@@ -68,25 +65,19 @@ const Awards = () => {
         toast.success("Award added successfully 🏆", { id: toastId });
       }
 
-      // Reset form
       setShowForm(false);
       setEditingAward(null);
-      setFormData({
-        icon: "",
-        year: "",
-        title: "",
-        description: "",
-      });
+      setFormData({ icon: "", year: "", title: "", description: "" });
     } catch (error) {
       console.error("Error saving award:", error);
       toast.error("Error saving award ❌", { id: toastId });
     }
   };
 
-  // 🗑️ Delete Award (with toast confirmation)
+  // 🗑️ Delete Award
   const handleDelete = async (id) => {
     toast((t) => (
-      <div>
+      <div className={theme === "dark" ? "text-white" : ""}>
         <p className="text-sm font-medium mb-2">
           Are you sure you want to delete this award?
         </p>
@@ -120,17 +111,21 @@ const Awards = () => {
     ));
   };
 
+  const bgMain = theme === "dark" ? "bg-zinc-900 text-gray-100" : "bg-gray-50 text-gray-900";
+  const cardBg = theme === "dark" ? "bg-zinc-800 border-zinc-700" : "bg-white border-gray-200";
+  const modalBg = theme === "dark" ? "bg-zinc-900 text-gray-100" : "bg-white text-gray-900";
+  const inputBg = theme === "dark" ? "bg-zinc-700 text-gray-100 border-zinc-600 placeholder-gray-400" : "bg-white text-gray-900 border-gray-300 placeholder-gray-500";
+
   return (
-    <section className="py-10 px-6 md:px-12 bg-gray-50 min-h-screen">
-      {/* Toast Container */}
+    <section className={`py-10 px-6 md:px-12 min-h-screen ${bgMain}`}>
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: "#fff",
-            color: "#111",
-            border: "1px solid #e5e7eb",
+            background: theme === "dark" ? "#111" : "#fff",
+            color: theme === "dark" ? "#fff" : "#111",
+            border: theme === "dark" ? "1px solid #555" : "1px solid #e5e7eb",
           },
         }}
       />
@@ -138,20 +133,15 @@ const Awards = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Awards</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold">Awards</h2>
+          <p className={theme === "dark" ? "text-gray-300" : "text-gray-600"}>
             Manage your recognitions & achievements
           </p>
         </div>
         <button
           onClick={() => {
             setEditingAward(null);
-            setFormData({
-              icon: "",
-              year: "",
-              title: "",
-              description: "",
-            });
+            setFormData({ icon: "", year: "", title: "", description: "" });
             setShowForm(true);
           }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -163,93 +153,44 @@ const Awards = () => {
       {/* Modal Form */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+          <div className={`rounded-xl p-6 w-full max-w-md shadow-lg ${modalBg}`}>
             <h3 className="text-xl font-bold mb-4">
               {editingAward ? "Edit Award" : "Add New Award"}
             </h3>
-
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Icon */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Icon (emoji or URL)
-                </label>
-                <input
-                  type="text"
-                  value={formData.icon}
-                  onChange={(e) =>
-                    setFormData({ ...formData, icon: e.target.value })
-                  }
-                  placeholder="🏆 or https://..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Year */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Year
-                </label>
-                <input
-                  type="number"
-                  value={formData.year}
-                  onChange={(e) =>
-                    setFormData({ ...formData, year: e.target.value })
-                  }
-                  placeholder="2024"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  placeholder="Best UI/UX Designer"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Brief details about this award..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                ></textarea>
-              </div>
-
-              {/* Actions */}
+              {["icon","year","title","description"].map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium mb-1 capitalize">{field}</label>
+                  {field === "description" ? (
+                    <textarea
+                      value={formData[field]}
+                      onChange={(e) => setFormData({...formData,[field]: e.target.value})}
+                      rows={3}
+                      className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+                    />
+                  ) : (
+                    <input
+                      type={field==="year"?"number":"text"}
+                      value={formData[field]}
+                      onChange={(e) => setFormData({...formData,[field]: e.target.value})}
+                      className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+                      placeholder={field==="icon"?"🏆 or https://...":undefined}
+                      required={field==="year" || field==="title"}
+                    />
+                  )}
+                </div>
+              ))}
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingAward(null);
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  onClick={() => { setShowForm(false); setEditingAward(null); }}
+                  className={`px-4 py-2 rounded-lg border hover:bg-gray-50 ${theme==="dark"?"border-zinc-600":"border-gray-300"}`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   {editingAward ? "Update" : "Add"}
                 </button>
@@ -264,41 +205,25 @@ const Awards = () => {
         {awards.map((award) => (
           <div
             key={award.id}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300"
+            className={`rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border ${cardBg}`}
           >
             <div className="flex items-center space-x-4 mb-3">
               {award.icon && (
                 <span className="text-3xl">
                   {award.icon.startsWith("http") ? (
-                    <img
-                      src={award.icon}
-                      alt={award.title}
-                      className="w-10 h-10"
-                    />
-                  ) : (
-                    award.icon
-                  )}
+                    <img src={award.icon} alt={award.title} className="w-10 h-10" />
+                  ) : award.icon}
                 </span>
               )}
               <div>
-                <h3 className="font-semibold text-lg text-gray-900">
-                  {award.title}
-                </h3>
-                <p className="text-gray-500 text-sm">{award.year}</p>
+                <h3 className={`font-semibold text-lg ${theme==="dark"?"text-gray-100":"text-gray-900"}`}>{award.title}</h3>
+                <p className={theme==="dark"?"text-gray-400":"text-gray-500"}>{award.year}</p>
               </div>
             </div>
-
-            {award.description && (
-              <p className="text-gray-600 text-sm mb-4">{award.description}</p>
-            )}
-
-            <div className="flex space-x-2">
+            {award.description && <p className={theme==="dark"?"text-gray-300":"text-gray-600"}>{award.description}</p>}
+            <div className="flex space-x-2 mt-4">
               <button
-                onClick={() => {
-                  setEditingAward(award);
-                  setFormData(award);
-                  setShowForm(true);
-                }}
+                onClick={() => { setEditingAward(award); setFormData(award); setShowForm(true); }}
                 className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm hover:bg-blue-700 transition"
               >
                 Edit
