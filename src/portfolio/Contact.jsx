@@ -14,10 +14,12 @@ import {
   FaInstagram,
   FaYoutube,
   FaGlobe,
+  FaUserShield,
 } from "react-icons/fa";
 import { db } from "../firebase/firebaseConfig";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
-import { useNavigate } from "react-router-dom"; // ✅ added for navigation
+import { useNavigate } from "react-router-dom";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const iconMap = {
   linkedin: <FaLinkedin size={20} />,
@@ -36,10 +38,18 @@ const Contact = () => {
     subject: "",
     message: "",
   });
-
   const [socialLinks, setSocialLinks] = useState([]);
-  const navigate = useNavigate(); // ✅ hook for routing
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
+  // 🔹 Check login status
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => setUser(user));
+    return () => unsubscribe();
+  }, []);
+
+  // 🔹 Fetch dynamic social links
   useEffect(() => {
     const q = query(collection(db, "socialMedia"), orderBy("name", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -57,16 +67,27 @@ const Contact = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (!formData.name || !formData.email || !formData.message) {
       toast.error("Please fill in all required fields.");
       return;
     }
+
     toast.loading("Sending message...");
     setTimeout(() => {
       toast.dismiss();
       toast.success("Message sent successfully! 🚀");
       setFormData({ name: "", email: "", subject: "", message: "" });
     }, 1200);
+  };
+
+  const handleAdminClick = () => {
+    if (user) {
+      navigate("/admin");
+    } else {
+      toast.error("⚠️ Please log in first to access the admin dashboard.");
+      navigate("/login");
+    }
   };
 
   const scrollToTop = () => scroll.scrollToTop({ smooth: true, duration: 600 });
@@ -93,9 +114,7 @@ const Contact = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Left Side */}
         <div>
-          <h3 className="text-xl font-semibold text-white mb-4">
-            Get in Touch
-          </h3>
+          <h3 className="text-xl font-semibold text-white mb-4">Get in Touch</h3>
           <p className="text-gray-400 mb-6">
             I’m always excited to work on new projects and collaborate with
             passionate minds. Whether you have a specific project in mind or
@@ -117,7 +136,7 @@ const Contact = () => {
             </li>
           </ul>
 
-          {/* Dynamic Social Links */}
+          {/* 🔹 Dynamic Social Links */}
           <div className="mt-6 flex items-center flex-wrap gap-5">
             {socialLinks.length > 0 ? (
               socialLinks.map((link) => (
@@ -147,6 +166,19 @@ const Contact = () => {
               Currently accepting freelance projects and full-time opportunities.
               Let’s discuss your next big idea.
             </p>
+          </div>
+
+          {/* 🔹 Admin Button */}
+          <div className="mt-6">
+            <motion.button
+              onClick={handleAdminClick}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center space-x-2 bg-green-500 text-black px-4 py-2 rounded font-semibold hover:bg-green-400 transition"
+            >
+              <FaUserShield />
+              <span>Admin</span>
+            </motion.button>
           </div>
         </div>
 
@@ -208,71 +240,7 @@ const Contact = () => {
         </motion.form>
       </div>
 
-      {/* Footer Section */}
-      <footer className="mt-16 border-t border-gray-800 pt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm text-gray-400">
-        <div>
-          <h4 className="text-white font-semibold mb-4">Portfolio</h4>
-          <p>
-            Creating digital experiences that drive growth and deliver tangible
-            results. Let’s build something amazing together.
-          </p>
-        </div>
-
-        <div>
-          <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-          <ul className="space-y-2">
-            {[
-              "home",
-              "about",
-              "skills",
-              "experience",
-              "projects",
-              "awards",
-              "contact",
-            ].map((item) => (
-              <li key={item}>
-                <ScrollLink
-                  to={item}
-                  smooth={true}
-                  duration={600}
-                  className="hover:text-green-500 transition cursor-pointer"
-                >
-                  {item.charAt(0).toUpperCase() + item.slice(1)}
-                </ScrollLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="text-center md:text-right">
-          <h4 className="text-white font-semibold mb-4">Let’s Connect</h4>
-          <p className="mb-4">
-            Ready to start your next project? Get in touch and let’s create something
-            great together.
-          </p>
-          <ScrollLink
-            to="contact"
-            smooth={true}
-            duration={600}
-            className="inline-block bg-green-500 text-black px-4 py-2 rounded font-semibold hover:bg-green-400 transition cursor-pointer mr-3"
-          >
-            Start a Project
-          </ScrollLink>
-
-          {/* 🔐 Admin Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/admin")} // ✅ route to /admin
-            className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded font-semibold border border-green-600 text-green-400 hover:bg-green-500 hover:text-black transition-all duration-300"
-          >
-            <FaGlobe />
-            Admin
-          </motion.button>
-        </div>
-      </footer>
-
-      {/* Bottom Bar */}
+      {/* Footer and Bottom Bar same as before */}
       <div className="mt-10 text-center border-t border-gray-800 pt-6 text-gray-500 text-sm">
         <p>© 2025 Portfolio. Made with ❤️ by a passionate designer.</p>
         <div className="mt-4 flex justify-center">

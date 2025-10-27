@@ -60,8 +60,8 @@ const Navbar = () => {
                 activeClass="text-blue-400 border-b-2 border-blue-400"
                 className={`cursor-pointer transition-colors duration-300 ${
                   darkMode
-                    ? "text-gray-200 hover:text-blue-400"
-                    : "text-gray-900 hover:text-blue-500"
+                    ? "text-gray-200 hover:text-green-400"
+                    : "text-gray-900 hover:text-green-500"
                 }`}
               >
                 {item.name}
