@@ -1,105 +1,146 @@
 import React, { useState, useEffect } from "react";
 import { FiSun, FiMoon, FiMenu, FiX } from "react-icons/fi";
+import { Link } from "react-scroll";
+import { useTheme } from "../context/ThemeContext";
 
-function Navbar() {
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
+const Navbar = () => {
+  const { darkMode, toggleDarkMode } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("home");
+  const [scrolled, setScrolled] = useState(false);
 
-  // Apply dark mode
+  const navItems = [
+    { name: "Home", to: "home" },
+    { name: "About", to: "about" },
+    { name: "Skills", to: "skills" },
+    { name: "Experience", to: "experience" },
+    { name: "Projects", to: "projects" },
+    { name: "Awards", to: "awards" },
+    { name: "Contact", to: "contact" },
+  ];
+
+  // Detect scroll
   useEffect(() => {
-    const html = document.documentElement;
-    if (darkMode) {
-      html.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      html.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
-  // IntersectionObserver to highlight active section
-  useEffect(() => {
-    const sectionIds = ["home", "about", "skills", "experience", "projects", "awards", "contact"];
-    const observerOptions = {
-      root: null,
-      rootMargin: "-50% 0px -50% 0px", // triggers when section is mostly in view
-      threshold: 0
+    const handleScroll = () => {
+      if (window.scrollY > 50) setScrolled(true);
+      else setScrolled(false);
     };
-
-    const observerCallback = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
-    sectionIds.forEach((id) => {
-      const section = document.getElementById(id);
-      if (section) observer.observe(section);
-    });
-
-    return () => observer.disconnect();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Smooth scroll
-  const handleScrollTo = (id) => {
-    const section = document.getElementById(id);
-    if (section) {
-      const yOffset = -64; // Adjust to navbar height
-      const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: "smooth" });
-      setMenuOpen(false);
-    }
-  };
-
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 dark:bg-[#0a0a0f]/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 flex justify-between items-center h-16">
-        <div className="text-xl font-semibold text-gray-900 dark:text-white">Portfolio</div>
+    <nav
+      className={`fixed w-full z-50 transition-all duration-500 backdrop-blur-md
+        ${
+          darkMode
+            ? scrolled
+              ? "bg-[#0a0a0f]/90 shadow-lg"
+              : "bg-[#0a0a0f]/70"
+            : scrolled
+            ? "bg-white/95 shadow-lg"
+            : "bg-white/90"
+        }`}
+    >
+      <div className="flex items-center justify-between p-4 max-w-7xl mx-auto">
+        {/* Logo */}
+        <h1 className="text-xl font-bold text-gray-900 portfolio-dark:text-white">
+          My Portfolio
+        </h1>
 
-        <ul
-          className={`absolute md:static top-16 left-0 w-full md:w-auto bg-white dark:bg-[#0a0a0f] md:bg-transparent md:dark:bg-transparent flex flex-col md:flex-row md:space-x-8 items-center md:items-center text-center text-gray-800 dark:text-gray-300 font-medium transition-all duration-300 ${
-            menuOpen ? "opacity-100 visible" : "opacity-0 invisible md:visible md:opacity-100"
-          }`}
-        >
-          {["Home", "About", "Skills", "Experience", "Projects", "Awards", "Contact"].map((item) => (
-            <li
-              key={item}
-              className={`py-3 md:py-0 transition-colors duration-300 ${
-                activeSection === item.toLowerCase()
-                  ? "text-teal-500 dark:text-teal-400 font-semibold"
-                  : "hover:text-teal-400 dark:hover:text-teal-400"
-              }`}
-            >
-              <button onClick={() => handleScrollTo(item.toLowerCase())} className="focus:outline-none">
-                {item}
-              </button>
+        {/* Desktop Nav Links */}
+        <ul className="hidden md:flex space-x-6">
+          {navItems.map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                smooth={true}
+                duration={500}
+                spy={true}
+                offset={-70}
+                activeClass="text-blue-400 border-b-2 border-blue-400"
+                className={`cursor-pointer transition-colors duration-300 ${
+                  darkMode
+                    ? "text-gray-200 hover:text-blue-400"
+                    : "text-gray-900 hover:text-blue-500"
+                }`}
+              >
+                {item.name}
+              </Link>
             </li>
           ))}
         </ul>
 
-        <div className="flex items-center gap-4">
+        {/* Right Icons */}
+        <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
           <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="text-gray-700 dark:text-gray-300 text-xl p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-all duration-300"
-            title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            onClick={toggleDarkMode}
+            className={`p-2 rounded-full transition-colors duration-300 ${
+              darkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-white hover:bg-gray-100"
+            }`}
           >
-            {darkMode ? <FiSun /> : <FiMoon />}
+            {darkMode ? (
+              <FiSun className="text-yellow-400 text-xl" />
+            ) : (
+              <FiMoon className="text-gray-800 text-xl" />
+            )}
           </button>
 
+          {/* Mobile Menu Toggle */}
           <button
-            className="text-gray-800 dark:text-gray-300 text-2xl md:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
+            className={`md:hidden p-2 rounded transition-colors duration-300 ${
+              darkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-white hover:bg-gray-100"
+            }`}
           >
-            {menuOpen ? <FiX /> : <FiMenu />}
+            {menuOpen ? <FiX size={22} /> : <FiMenu size={22} />}
           </button>
         </div>
       </div>
+
+      {/* Mobile Slide-in Menu */}
+      <div
+        className={`fixed top-0 left-0 h-full w-64 z-40 transform transition-transform duration-300
+          ${menuOpen ? "translate-x-0" : "-translate-x-full"}
+          ${darkMode ? "bg-[#0a0a0f]" : "bg-white/95"} md:hidden shadow-lg`}
+      >
+        <ul className="flex flex-col mt-20 space-y-6 px-6">
+          {navItems.map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                smooth={true}
+                duration={500}
+                spy={true}
+                offset={-70}
+                activeClass="text-blue-400 font-bold"
+                className={`block cursor-pointer transition-colors duration-300 ${
+                  darkMode
+                    ? "text-gray-200 hover:text-blue-400"
+                    : "text-gray-900 hover:text-blue-500"
+                }`}
+                onClick={() => setMenuOpen(false)} // close menu on click
+              >
+                {item.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Overlay */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setMenuOpen(false)}
+        ></div>
+      )}
     </nav>
   );
-}
+};
 
 export default Navbar;

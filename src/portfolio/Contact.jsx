@@ -17,6 +17,7 @@ import {
 } from "react-icons/fa";
 import { db } from "../firebase/firebaseConfig";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { useTheme } from "../context/ThemeContext";
 
 // Map Firestore "name" values to icons
 const iconMap = {
@@ -30,6 +31,8 @@ const iconMap = {
 };
 
 const Contact = () => {
+  const { darkMode } = useTheme();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -71,18 +74,32 @@ const Contact = () => {
     }, 1200);
   };
 
-  const scrollToTop = () => scroll.scrollToTop({ smooth: true, duration: 600 });
+  const scrollToTop = () =>
+    scroll.scrollToTop({ smooth: true, duration: 600 });
 
   return (
-    <div className="bg-black text-gray-200 min-h-screen py-16 px-6 sm:px-10 lg:px-20" id="contact">
+    <div
+      className={`min-h-screen py-16 px-6 sm:px-10 lg:px-20 transition-colors duration-500 ${
+        darkMode ? "bg-[#0a0a0f] text-gray-200" : "bg-gray-50 text-gray-900"
+      }`}
+      id="contact"
+    >
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
 
       {/* Header */}
       <div className="text-center mb-12">
-        <h2 className="text-3xl sm:text-4xl font-bold text-white">
+        <h2
+          className={`text-3xl sm:text-4xl font-bold transition-colors duration-500 ${
+            darkMode ? "text-white" : "text-gray-900"
+          }`}
+        >
           Let’s Work <span className="text-green-500">Together</span>
         </h2>
-        <p className="text-gray-400 mt-3 max-w-2xl mx-auto">
+        <p
+          className={`mt-3 max-w-2xl mx-auto transition-colors duration-500 ${
+            darkMode ? "text-gray-400" : "text-gray-700"
+          }`}
+        >
           Ready to bring your ideas to life? Let’s discuss how we can create
           something amazing together.
         </p>
@@ -92,8 +109,18 @@ const Contact = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Left Side */}
         <div>
-          <h3 className="text-xl font-semibold text-white mb-4">Get in Touch</h3>
-          <p className="text-gray-400 mb-6">
+          <h3
+            className={`text-xl font-semibold mb-4 transition-colors duration-500 ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Get in Touch
+          </h3>
+          <p
+            className={`mb-6 transition-colors duration-500 ${
+              darkMode ? "text-gray-400" : "text-gray-700"
+            }`}
+          >
             I’m always excited to work on new projects and collaborate with
             passionate minds. Whether you have a specific project in mind or
             just want to explore possibilities, I’d love to hear from you.
@@ -123,24 +150,48 @@ const Contact = () => {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-green-500 transition"
+                  className={`transition ${
+                    darkMode
+                      ? "text-gray-400 hover:text-green-500"
+                      : "text-gray-600 hover:text-green-500"
+                  }`}
                   title={link.displayName || link.name}
                 >
                   {iconMap[link.name?.toLowerCase()] || <FaGlobe size={20} />}
                 </a>
               ))
             ) : (
-              <p className="text-gray-500 text-sm">Loading social links...</p>
+              <p
+                className={`text-sm transition-colors duration-500 ${
+                  darkMode ? "text-gray-500" : "text-gray-600"
+                }`}
+              >
+                Loading social links...
+              </p>
             )}
           </div>
 
           {/* Availability */}
-          <div className="mt-8 bg-zinc-900 border border-green-600 rounded-lg p-4">
-            <p className="text-green-400 font-semibold flex items-center space-x-2">
+          <div
+            className={`mt-8 p-4 rounded-lg border transition-colors duration-500 ${
+              darkMode
+                ? "bg-gray-900 border-green-600"
+                : "bg-green-50 border-green-500"
+            }`}
+          >
+            <p
+              className={`flex items-center space-x-2 font-semibold transition-colors duration-500 ${
+                darkMode ? "text-green-400" : "text-green-700"
+              }`}
+            >
               <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
               <span>Available for New Projects</span>
             </p>
-            <p className="text-gray-400 text-sm mt-2">
+            <p
+              className={`text-sm mt-2 transition-colors duration-500 ${
+                darkMode ? "text-gray-400" : "text-gray-700"
+              }`}
+            >
               Currently accepting freelance projects and full-time opportunities.
               Let’s discuss your next big idea.
             </p>
@@ -152,7 +203,9 @@ const Contact = () => {
           onSubmit={handleSubmit}
           whileHover={{ scale: 1.01 }}
           transition={{ duration: 0.2 }}
-          className="bg-zinc-900 p-8 rounded-lg shadow-lg space-y-5"
+          className={`p-8 rounded-lg shadow-lg space-y-5 transition-colors duration-500 ${
+            darkMode ? "bg-gray-900" : "bg-white"
+          }`}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input
@@ -161,7 +214,11 @@ const Contact = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="Your full name"
-              className="w-full p-3 rounded bg-zinc-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={`w-full p-3 rounded transition-colors duration-500 ${
+                darkMode
+                  ? "bg-gray-800 text-gray-200 focus:ring-green-500"
+                  : "bg-gray-100 text-gray-900 focus:ring-green-500"
+              } focus:outline-none focus:ring-2`}
             />
             <input
               type="email"
@@ -169,7 +226,11 @@ const Contact = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="your.email@example.com"
-              className="w-full p-3 rounded bg-zinc-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={`w-full p-3 rounded transition-colors duration-500 ${
+                darkMode
+                  ? "bg-gray-800 text-gray-200 focus:ring-green-500"
+                  : "bg-gray-100 text-gray-900 focus:ring-green-500"
+              } focus:outline-none focus:ring-2`}
             />
           </div>
 
@@ -179,7 +240,11 @@ const Contact = () => {
             value={formData.subject}
             onChange={handleChange}
             placeholder="What’s this about?"
-            className="w-full p-3 rounded bg-zinc-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className={`w-full p-3 rounded transition-colors duration-500 ${
+              darkMode
+                ? "bg-gray-800 text-gray-200 focus:ring-green-500"
+                : "bg-gray-100 text-gray-900 focus:ring-green-500"
+            } focus:outline-none focus:ring-2`}
           />
 
           <textarea
@@ -188,7 +253,11 @@ const Contact = () => {
             value={formData.message}
             onChange={handleChange}
             placeholder="Tell me about your project goals, timeline, and budget..."
-            className="w-full p-3 rounded bg-zinc-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className={`w-full p-3 rounded transition-colors duration-500 ${
+              darkMode
+                ? "bg-gray-800 text-gray-200 focus:ring-green-500"
+                : "bg-gray-100 text-gray-900 focus:ring-green-500"
+            } focus:outline-none focus:ring-2`}
           ></textarea>
 
           <motion.button
@@ -199,24 +268,41 @@ const Contact = () => {
             Send Message
           </motion.button>
 
-          <p className="text-gray-500 text-sm text-center">
-            I typically respond within 24 hours. Looking forward to hearing from you!
+          <p
+            className={`text-sm text-center transition-colors duration-500 ${
+              darkMode ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            I typically respond within 24 hours. Looking forward to hearing from
+            you!
           </p>
         </motion.form>
       </div>
 
       {/* Footer Section */}
-      <footer className="mt-16 border-t border-gray-800 pt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm text-gray-400">
+      <footer className="mt-16 border-t transition-colors duration-500 border-gray-800 pt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
         <div>
-          <h4 className="text-white font-semibold mb-4">Portfolio</h4>
-          <p>
+          <h4
+            className={`font-semibold mb-4 transition-colors duration-500 ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Portfolio
+          </h4>
+          <p className={darkMode ? "text-gray-400" : "text-gray-700"}>
             Creating digital experiences that drive growth and deliver tangible
             results. Let’s build something amazing together.
           </p>
         </div>
 
         <div>
-          <h4 className="text-white font-semibold mb-4">Quick Links</h4>
+          <h4
+            className={`font-semibold mb-4 transition-colors duration-500 ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Quick Links
+          </h4>
           <ul className="space-y-2">
             {["home", "about", "skills", "experience", "projects", "awards", "contact"].map(
               (item) => (
@@ -225,7 +311,9 @@ const Contact = () => {
                     to={item}
                     smooth={true}
                     duration={600}
-                    className="hover:text-green-500 transition cursor-pointer"
+                    className={`transition-colors duration-300 cursor-pointer hover:text-green-500 ${
+                      darkMode ? "text-gray-400" : "text-gray-700"
+                    }`}
                   >
                     {item.charAt(0).toUpperCase() + item.slice(1)}
                   </ScrollLink>
@@ -236,8 +324,14 @@ const Contact = () => {
         </div>
 
         <div className="text-center md:text-right">
-          <h4 className="text-white font-semibold mb-4">Let’s Connect</h4>
-          <p className="mb-4">
+          <h4
+            className={`font-semibold mb-4 transition-colors duration-500 ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Let’s Connect
+          </h4>
+          <p className={darkMode ? "text-gray-400 mb-4" : "text-gray-700 mb-4"}>
             Ready to start your next project? Get in touch and let’s create something
             great together.
           </p>
@@ -253,7 +347,11 @@ const Contact = () => {
       </footer>
 
       {/* Bottom Bar */}
-      <div className="mt-10 text-center border-t border-gray-800 pt-6 text-gray-500 text-sm">
+      <div
+        className={`mt-10 text-center border-t pt-6 text-sm transition-colors duration-500 ${
+          darkMode ? "text-gray-500 border-gray-800" : "text-gray-600 border-gray-300"
+        }`}
+      >
         <p>© 2025 Portfolio. Made with ❤️ by a passionate designer.</p>
         <div className="mt-4 flex justify-center">
           <motion.button
