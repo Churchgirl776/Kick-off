@@ -281,89 +281,118 @@ const Contact = () => {
 
       {/* Footer Section */}
       <footer className="mt-16 border-t transition-colors duration-500 border-gray-800 pt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
-        <div>
-          <h4
-            className={`font-semibold mb-4 transition-colors duration-500 ${
-              darkMode ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Portfolio
-          </h4>
-          <p className={darkMode ? "text-gray-400" : "text-gray-700"}>
-            Creating digital experiences that drive growth and deliver tangible
-            results. Let’s build something amazing together.
-          </p>
-        </div>
+  <div>
+    <h4
+      className={`font-semibold mb-4 transition-colors duration-500 ${
+        darkMode ? "text-white" : "text-gray-900"
+      }`}
+    >
+      Portfolio
+    </h4>
+    <p className={darkMode ? "text-gray-400" : "text-gray-700"}>
+      Creating digital experiences that drive growth and deliver tangible
+      results. Let’s build something amazing together.
+    </p>
+  </div>
 
-        <div>
-          <h4
-            className={`font-semibold mb-4 transition-colors duration-500 ${
-              darkMode ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Quick Links
-          </h4>
-          <ul className="space-y-2">
-            {["home", "about", "skills", "experience", "projects", "awards", "contact"].map(
-              (item) => (
-                <li key={item}>
-                  <ScrollLink
-                    to={item}
-                    smooth={true}
-                    duration={600}
-                    className={`transition-colors duration-300 cursor-pointer hover:text-green-500 ${
-                      darkMode ? "text-gray-400" : "text-gray-700"
-                    }`}
-                  >
-                    {item.charAt(0).toUpperCase() + item.slice(1)}
-                  </ScrollLink>
-                </li>
-              )
-            )}
-          </ul>
-        </div>
-
-        <div className="text-center md:text-right">
-          <h4
-            className={`font-semibold mb-4 transition-colors duration-500 ${
-              darkMode ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Let’s Connect
-          </h4>
-          <p className={darkMode ? "text-gray-400 mb-4" : "text-gray-700 mb-4"}>
-            Ready to start your next project? Get in touch and let’s create something
-            great together.
-          </p>
+  <div>
+    <h4
+      className={`font-semibold mb-4 transition-colors duration-500 ${
+        darkMode ? "text-white" : "text-gray-900"
+      }`}
+    >
+      Quick Links
+    </h4>
+    <ul className="space-y-2">
+      {[
+        "home",
+        "about",
+        "skills",
+        "experience",
+        "projects",
+        "awards",
+        "contact",
+      ].map((item) => (
+        <li key={item}>
           <ScrollLink
-            to="contact"
+            to={item}
             smooth={true}
             duration={600}
-            className="inline-block bg-green-500 text-black px-4 py-2 rounded font-semibold hover:bg-green-400 transition cursor-pointer"
+            className={`transition-colors duration-300 cursor-pointer hover:text-green-500 ${
+              darkMode ? "text-gray-400" : "text-gray-700"
+            }`}
           >
-            Start a Project
+            {item.charAt(0).toUpperCase() + item.slice(1)}
           </ScrollLink>
-        </div>
-      </footer>
+        </li>
+      ))}
+    </ul>
+  </div>
 
-      {/* Bottom Bar */}
-      <div
-        className={`mt-10 text-center border-t pt-6 text-sm transition-colors duration-500 ${
-          darkMode ? "text-gray-500 border-gray-800" : "text-gray-600 border-gray-300"
-        }`}
-      >
-        <p>© 2025 Portfolio. Made with ❤️ by a passionate designer.</p>
-        <div className="mt-4 flex justify-center">
-          <motion.button
-            whileHover={{ y: -4 }}
-            onClick={scrollToTop}
-            className="flex items-center space-x-2 bg-green-500 text-black px-4 py-2 rounded-full font-semibold hover:bg-green-400 transition"
-          >
-            <FaArrowUp />
-            <span>Back to Top</span>
-          </motion.button>
-        </div>
-      </div>
+  {/* Right Side - Let's Connect + Admin Button */}
+  <div className="text-center md:text-right">
+    <h4
+      className={`font-semibold mb-4 transition-colors duration-500 ${
+        darkMode ? "text-white" : "text-gray-900"
+      }`}
+    >
+      Let’s Connect
+    </h4>
+    <p
+      className={`mb-4 transition-colors duration-500 ${
+        darkMode ? "text-gray-400" : "text-gray-700"
+      }`}
+    >
+      Ready to start your next project? Get in touch and let’s create something
+      great together.
+    </p>
+
+    {/* 🌟 Start Project Button */}
+    <ScrollLink
+      to="contact"
+      smooth={true}
+      duration={600}
+      className="inline-block bg-green-500 text-black px-4 py-2 rounded font-semibold hover:bg-green-400 transition cursor-pointer mr-3"
+    >
+      Start a Project
+    </ScrollLink>
+
+    {/* 🔐 Admin Button */}
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={() => (window.location.href = "/admin")}
+      className={`mt-3 inline-flex items-center gap-2 px-4 py-2 rounded font-semibold border transition-all duration-300 ${
+        darkMode
+          ? "bg-gray-900 text-green-400 border-green-600 hover:bg-green-500 hover:text-black"
+          : "bg-white text-green-600 border-green-500 hover:bg-green-500 hover:text-white"
+      }`}
+    >
+      <FaGlobe />
+      Admin
+    </motion.button>
+  </div>
+</footer>
+
+{/* Bottom Bar */}
+<div
+  className={`mt-10 text-center border-t pt-6 text-sm transition-colors duration-500 ${
+    darkMode ? "text-gray-500 border-gray-800" : "text-gray-600 border-gray-300"
+  }`}
+>
+  <p>© 2025 Portfolio. Made with ❤️ by a passionate designer.</p>
+  <div className="mt-4 flex justify-center">
+    <motion.button
+      whileHover={{ y: -4 }}
+      onClick={scrollToTop}
+      className="flex items-center space-x-2 bg-green-500 text-black px-4 py-2 rounded-full font-semibold hover:bg-green-400 transition"
+    >
+      <FaArrowUp />
+      <span>Back to Top</span>
+    </motion.button>
+  </div>
+</div>
+
     </div>
   );
 };
