@@ -11,9 +11,16 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import { FiEdit, FiTrash2, FiPlus, FiMinus } from "react-icons/fi";
+import {
+  FiEdit,
+  FiTrash2,
+  FiPlus,
+  FiMinus,
+  FiChevronDown,
+  FiChevronUp,
+} from "react-icons/fi";
 
-const Projects = ({ theme = "light", onUpdate }) => {
+function Projects({ theme = "light", onUpdate }) {
   const safeOnUpdate = typeof onUpdate === "function" ? onUpdate : () => {};
 
   const [projects, setProjects] = useState([]);
@@ -21,7 +28,7 @@ const Projects = ({ theme = "light", onUpdate }) => {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState(null);
-
+  const [expanded, setExpanded] = useState({});
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -41,88 +48,17 @@ const Projects = ({ theme = "light", onUpdate }) => {
     stages: [""],
   });
 
-  // Fetch projects
   useEffect(() => {
     const q = query(collection(db, "projects"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setProjects(data);
       setLoading(false);
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  // Delete
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      await deleteDoc(doc(db, "projects", id));
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Dynamic array field changes
-  const handleArrayChange = (field, index, value) => {
-    const updated = [...formData[field]];
-    updated[index] = value;
-    setFormData((prev) => ({ ...prev, [field]: updated }));
-  };
-
-  const addArrayItem = (field) => {
-    setFormData((prev) => ({ ...prev, [field]: [...prev[field], ""] }));
-  };
-
-  const removeArrayItem = (field, index) => {
-    const updated = [...formData[field]];
-    updated.splice(index, 1);
-    setFormData((prev) => ({ ...prev, [field]: updated }));
-  };
-
-  const handleSaveProject = async () => {
-    if (!formData.name.trim() || !formData.description.trim()) {
-      alert("Please fill in the required fields: Name and Description.");
-      return;
-    }
-
-    setSaving(true);
-    const formattedData = {
-      ...formData,
-      technologies: formData.technologies
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      gallery: formData.gallery.filter((g) => g.trim() !== ""),
-      stages: formData.stages.filter((s) => s.trim() !== ""),
-    };
-
-    try {
-      if (editId) {
-        await updateDoc(doc(db, "projects", editId), {
-          ...formattedData,
-          updatedAt: serverTimestamp(),
-        });
-      } else {
-        await addDoc(collection(db, "projects"), {
-          ...formattedData,
-          createdAt: serverTimestamp(),
-        });
-      }
-
-      setShowModal(false);
-      setEditId(null);
-      resetForm();
-    } catch (err) {
-      console.error("Error saving project:", err);
-      alert("Error saving project. Check console for details.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const resetForm = () => {
+  const resetForm = () =>
     setFormData({
       name: "",
       description: "",
@@ -141,6 +77,76 @@ const Projects = ({ theme = "light", onUpdate }) => {
       gallery: [""],
       stages: [""],
     });
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this project?")) return;
+    try {
+      await deleteDoc(doc(db, "projects", id));
+      safeOnUpdate();
+    } catch (err) {
+      console.error(err);
+      alert("Delete failed. See console.");
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
+  };
+
+  const handleArrayChange = (field, index, value) => {
+    const copy = [...formData[field]];
+    copy[index] = value;
+    setFormData((p) => ({ ...p, [field]: copy }));
+  };
+
+  const addArrayItem = (field) =>
+    setFormData((p) => ({ ...p, [field]: [...p[field], ""] }));
+
+  const removeArrayItem = (field, idx) => {
+    const copy = [...formData[field]];
+    copy.splice(idx, 1);
+    setFormData((p) => ({ ...p, [field]: copy }));
+  };
+
+  const handleSaveProject = async () => {
+    if (!formData.name.trim() || !formData.description.trim()) {
+      alert("Please fill Name and Description.");
+      return;
+    }
+    setSaving(true);
+    const formatted = {
+      ...formData,
+      technologies: formData.technologies
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      gallery: formData.gallery.filter((g) => g.trim() !== ""),
+      stages: formData.stages.filter((s) => s.trim() !== ""),
+    };
+
+    try {
+      if (editId) {
+        await updateDoc(doc(db, "projects", editId), {
+          ...formatted,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        await addDoc(collection(db, "projects"), {
+          ...formatted,
+          createdAt: serverTimestamp(),
+        });
+      }
+      setShowModal(false);
+      setEditId(null);
+      resetForm();
+      safeOnUpdate();
+    } catch (err) {
+      console.error(err);
+      alert("Save failed. See console.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEdit = (project) => {
@@ -168,34 +174,39 @@ const Projects = ({ theme = "light", onUpdate }) => {
     setShowModal(true);
   };
 
+  const toggleExpand = (id) =>
+    setExpanded((s) => ({ ...s, [id]: !s[id] }));
+
   const styles =
     theme === "dark"
       ? {
           container: "bg-zinc-900 border-zinc-700 text-gray-100",
-          header: "bg-zinc-800 border-zinc-700 text-gray-100",
-          row: "hover:bg-zinc-800",
-          input: "bg-zinc-800 border-zinc-700 text-gray-100 placeholder-gray-400",
+          header: "bg-zinc-800 text-gray-100",
+          rowHover: "hover:bg-zinc-800",
+          input:
+            "bg-zinc-800 border-zinc-700 text-gray-100 placeholder-gray-400",
           modal: "bg-zinc-900 text-gray-100",
-          buttonCancel: "bg-gray-600 hover:bg-gray-700 text-white",
-          buttonSave: "bg-green-600 hover:bg-green-700 text-white",
+          btnCancel: "bg-gray-600 hover:bg-gray-700 text-white",
+          btnSave: "bg-green-600 hover:bg-green-700 text-white",
         }
       : {
           container: "bg-white border-gray-200 text-gray-900",
-          header: "bg-gray-50 border-gray-200 text-gray-700",
-          row: "hover:bg-gray-50",
-          input: "bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500",
+          header: "bg-gray-50 text-gray-700",
+          rowHover: "hover:bg-gray-50",
+          input:
+            "bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500",
           modal: "bg-white text-gray-900",
-          buttonCancel: "bg-gray-200 hover:bg-gray-300 text-gray-900",
-          buttonSave: "bg-green-600 hover:bg-green-700 text-white",
+          btnCancel: "bg-gray-200 hover:bg-gray-300 text-gray-900",
+          btnSave: "bg-green-600 hover:bg-green-700 text-white",
         };
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="w-full p-4 sm:p-6">
+      {/* header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <div>
           <h2 className="text-2xl font-bold">Projects</h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-500">
             Manage your portfolio projects
           </p>
         </div>
@@ -205,25 +216,19 @@ const Projects = ({ theme = "light", onUpdate }) => {
             resetForm();
             setShowModal(true);
           }}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition w-full sm:w-auto"
         >
           + Add Project
         </button>
       </div>
 
-      {/* Project List */}
-      {loading ? (
-        <div
-          className={`p-6 rounded-xl shadow text-center ${styles.container}`}
-        >
-          Loading projects...
-        </div>
-      ) : (
-        <div
-          className={`rounded-xl shadow-sm border overflow-hidden ${styles.container}`}
-        >
+      {/* Desktop Table */}
+      <div
+        className={`hidden lg:block rounded-xl shadow-sm border overflow-hidden ${styles.container}`}
+      >
+        <div className="overflow-x-auto">
           <div
-            className={`grid grid-cols-12 gap-4 px-6 py-4 font-semibold text-sm ${styles.header}`}
+            className={`min-w-[700px] grid grid-cols-12 gap-4 px-6 py-4 font-semibold text-sm ${styles.header}`}
           >
             <div className="col-span-4">Name</div>
             <div className="col-span-2">Status</div>
@@ -232,19 +237,21 @@ const Projects = ({ theme = "light", onUpdate }) => {
             <div className="col-span-2 text-right">Actions</div>
           </div>
 
-          <div className="divide-y divide-gray-700">
-            {projects.length === 0 ? (
-              <div className="text-center py-6 text-gray-400">
+          <div className="divide-y divide-gray-200 dark:divide-zinc-700">
+            {loading ? (
+              <div className="p-6 text-center">Loading projects...</div>
+            ) : projects.length === 0 ? (
+              <div className="p-6 text-center text-gray-400">
                 No projects found.
               </div>
             ) : (
               projects.map((project) => (
                 <div
                   key={project.id}
-                  className={`grid grid-cols-12 gap-4 px-6 py-4 transition ${styles.row}`}
+                  className={`min-w-[700px] grid grid-cols-12 gap-4 px-6 py-4 transition ${styles.rowHover}`}
                 >
                   <div className="col-span-4">
-                    <div className="font-medium">{project.name}</div>
+                    <div className="font-medium truncate">{project.name}</div>
                     <div className="text-sm opacity-75 truncate">
                       {project.description}
                     </div>
@@ -277,136 +284,276 @@ const Projects = ({ theme = "light", onUpdate }) => {
             )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Add/Edit Modal */}
+      {/* Mobile / Tablet Cards */}
+      <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {loading ? (
+          <div className={`p-4 rounded-xl shadow ${styles.container}`}>
+            Loading projects...
+          </div>
+        ) : projects.length === 0 ? (
+          <div className={`p-4 text-center rounded-xl ${styles.container}`}>
+            No projects found.
+          </div>
+        ) : (
+          projects.map((project) => {
+            const isOpen = !!expanded[project.id];
+            return (
+              <div
+                key={project.id}
+                className={`rounded-xl shadow-md border ${styles.container} overflow-hidden transition-transform duration-200 hover:scale-[1.01]`}
+              >
+                {/* Card Header */}
+                <button
+                  onClick={() => toggleExpand(project.id)}
+                  className="w-full flex items-center justify-between px-4 py-3 cursor-pointer focus:outline-none"
+                  aria-expanded={isOpen}
+                >
+                  <div className="text-left">
+                    <div className="font-semibold text-base break-words">
+                      {project.name}
+                    </div>
+                    <div className="text-sm text-gray-400 line-clamp-2">
+                      {project.description}
+                    </div>
+                  </div>
+                  <div className="ml-3 flex flex-col items-end">
+                    <span className="text-sm text-gray-500">
+                      {project.progress || project.status}
+                    </span>
+                    <div className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800">
+                      {isOpen ? <FiChevronUp /> : <FiChevronDown />}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Expanded Card */}
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-2 text-sm space-y-2 border-t border-gray-200 dark:border-zinc-700">
+                    <div>
+                      <span className="font-medium">Status:</span>{" "}
+                      {project.status}
+                    </div>
+                    {project.progress && (
+                      <div>
+                        <span className="font-medium">Progress:</span>{" "}
+                        {project.progress}
+                      </div>
+                    )}
+                    {project.date && (
+                      <div>
+                        <span className="font-medium">Date:</span>{" "}
+                        {project.date}
+                      </div>
+                    )}
+                    {project.owner && (
+                      <div>
+                        <span className="font-medium">Owner:</span>{" "}
+                        {project.owner}
+                      </div>
+                    )}
+                    {project.technologies && (
+                      <div>
+                        <span className="font-medium">Tech:</span>{" "}
+                        {Array.isArray(project.technologies)
+                          ? project.technologies.join(", ")
+                          : project.technologies}
+                      </div>
+                    )}
+                    {project.imageUrl && (
+                      <div className="mt-2">
+                        <img
+                          src={project.imageUrl}
+                          alt={project.name}
+                          className="rounded-lg w-full h-40 object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-3">
+                      <button
+                        onClick={() => handleEdit(project)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(project.id)}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 overflow-y-auto p-4">
+        <div className="fixed inset-0 bg-black/40 flex items-start sm:items-center justify-center z-[9999] p-4 overflow-y-auto">
           <div
-            className={`rounded-xl shadow-lg p-6 w-full max-w-lg relative ${styles.modal}`}
+            className={`rounded-xl shadow-lg p-5 w-full max-w-3xl ${styles.modal}`}
           >
             <h3 className="text-xl font-semibold mb-4">
               {editId ? "Edit Project" : "Add New Project"}
             </h3>
-
-            <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
-              {/* Basic fields */}
-              {[
-                { name: "name", placeholder: "Project Name *" },
-                { name: "description", placeholder: "Project Description *", textarea: true },
-                { name: "status", placeholder: "Status" },
-                { name: "progress", placeholder: "Progress" },
-                { name: "date", placeholder: "Date", type: "date" },
-                { name: "owner", placeholder: "Owner" },
-                { name: "role", placeholder: "Role (e.g. Designer, Developer)" },
-                { name: "duration", placeholder: "Duration (e.g. 6 weeks)" },
-                { name: "tools", placeholder: "Tools (comma separated)" },
-                { name: "results", placeholder: "Results / Impact" },
-                { name: "technologies", placeholder: "Technologies (comma separated)" },
-                { name: "imageUrl", placeholder: "Main Image URL" },
-              ].map((field) =>
-                field.textarea ? (
-                  <textarea
-                    key={field.name}
-                    name={field.name}
-                    value={formData[field.name]}
-                    onChange={handleChange}
-                    placeholder={field.placeholder}
-                    className={`w-full p-2 rounded border transition ${styles.input}`}
-                  />
-                ) : (
-                  <input
-                    key={field.name}
-                    type={field.type || "text"}
-                    name={field.name}
-                    value={formData[field.name]}
-                    onChange={handleChange}
-                    placeholder={field.placeholder}
-                    className={`w-full p-2 rounded border transition ${styles.input}`}
-                  />
-                )
-              )}
-
-              {/* Dynamic Gallery Input */}
-              <div>
-                <h4 className="font-medium mb-1 text-green-500">
-                  Gallery Images
-                </h4>
-                {formData.gallery.map((img, index) => (
-                  <div key={index} className="flex items-center gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={img}
-                      onChange={(e) =>
-                        handleArrayChange("gallery", index, e.target.value)
-                      }
-                      placeholder="Image URL"
-                      className={`flex-1 p-2 rounded border ${styles.input}`}
-                    />
-                    <button
-                      onClick={() => removeArrayItem("gallery", index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <FiMinus />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => addArrayItem("gallery")}
-                  className="flex items-center text-sm text-green-500 hover:text-green-400"
-                >
-                  <FiPlus className="mr-1" /> Add Image
-                </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto pr-2">
+              <div className="space-y-3">
+                <input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Project Name *"
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Description *"
+                  rows={4}
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+                <input
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  placeholder="Status"
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+                <input
+                  name="progress"
+                  value={formData.progress}
+                  onChange={handleChange}
+                  placeholder="Progress"
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+                <input
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
               </div>
 
-              {/* Dynamic Stages Input */}
-              <div>
-                <h4 className="font-medium mb-1 text-green-500">
-                  Project Stages / Milestones
-                </h4>
-                {formData.stages.map((step, index) => (
-                  <div key={index} className="flex items-center gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={step}
-                      onChange={(e) =>
-                        handleArrayChange("stages", index, e.target.value)
-                      }
-                      placeholder="Stage description"
-                      className={`flex-1 p-2 rounded border ${styles.input}`}
-                    />
-                    <button
-                      onClick={() => removeArrayItem("stages", index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <FiMinus />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => addArrayItem("stages")}
-                  className="flex items-center text-sm text-green-500 hover:text-green-400"
-                >
-                  <FiPlus className="mr-1" /> Add Stage
-                </button>
+              <div className="space-y-3">
+                <input
+                  name="owner"
+                  value={formData.owner}
+                  onChange={handleChange}
+                  placeholder="Owner"
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+                <input
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  placeholder="Role"
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+                <input
+                  name="duration"
+                  value={formData.duration}
+                  onChange={handleChange}
+                  placeholder="Duration"
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+                <input
+                  name="technologies"
+                  value={formData.technologies}
+                  onChange={handleChange}
+                  placeholder="Technologies (comma separated)"
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+                <input
+                  name="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={handleChange}
+                  placeholder="Image URL"
+                  className={`w-full p-2 rounded border ${styles.input}`}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <h4 className="font-medium mb-2">Gallery Images</h4>
+                <div className="space-y-2">
+                  {formData.gallery.map((g, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input
+                        value={g}
+                        onChange={(e) =>
+                          handleArrayChange("gallery", i, e.target.value)
+                        }
+                        className={`flex-1 p-2 rounded border ${styles.input}`}
+                        placeholder="Image URL"
+                      />
+                      <button
+                        onClick={() => removeArrayItem("gallery", i)}
+                        className="text-red-500 hover:text-red-700 mt-1"
+                      >
+                        <FiMinus />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => addArrayItem("gallery")}
+                    className="flex items-center text-sm text-green-500 hover:text-green-400"
+                  >
+                    <FiPlus className="mr-1" /> Add Image
+                  </button>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <h4 className="font-medium mb-2">Project Stages</h4>
+                <div className="space-y-2">
+                  {formData.stages.map((s, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input
+                        value={s}
+                        onChange={(e) =>
+                          handleArrayChange("stages", i, e.target.value)
+                        }
+                        className={`flex-1 p-2 rounded border ${styles.input}`}
+                        placeholder="Stage description"
+                      />
+                      <button
+                        onClick={() => removeArrayItem("stages", i)}
+                        className="text-red-500 hover:text-red-700 mt-1"
+                      >
+                        <FiMinus />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => addArrayItem("stages")}
+                    className="flex items-center text-sm text-green-500 hover:text-green-400"
+                  >
+                    <FiPlus className="mr-1" /> Add Stage
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-5">
               <button
                 onClick={() => {
                   setShowModal(false);
                   setEditId(null);
                 }}
-                className={`px-4 py-2 rounded-lg transition ${styles.buttonCancel}`}
+                className={`px-4 py-2 rounded ${styles.btnCancel}`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveProject}
                 disabled={saving}
-                className={`px-4 py-2 rounded-lg transition ${styles.buttonSave} disabled:opacity-50`}
+                className={`px-4 py-2 rounded ${styles.btnSave} disabled:opacity-50`}
               >
                 {saving
                   ? editId
@@ -422,6 +569,6 @@ const Projects = ({ theme = "light", onUpdate }) => {
       )}
     </div>
   );
-};
+}
 
 export default Projects;
