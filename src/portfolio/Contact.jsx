@@ -39,7 +39,9 @@ const iconMap = {
 };
 
 function Contact() {
-  const { theme } = useTheme(); // fixed to match your ThemeContext (dark by default)
+  const { darkMode } = useTheme();
+  const isDark = darkMode;
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -72,19 +74,20 @@ function Contact() {
   // save contact
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.email || !formData.responses)
+    if (!formData.email || !formData.message)
       return toast.error("Please fill in all required fields.");
 
     try {
-      await addDoc(collection(db, "responses"), {
+      await addDoc(collection(db, "contactResponses"), {
         ...formData,
         timestamp: serverTimestamp(),
+        read: false, // optional for admin tracking
       });
       toast.success("Message sent successfully! 🚀");
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (err) {
-      toast.error("Something went wrong, please try again.");
       console.error(err);
+      toast.error("Something went wrong, please try again.");
     }
   };
 
@@ -97,17 +100,10 @@ function Contact() {
     }
   };
 
-  const { darkMode } = useTheme(); // match your working context
-  const isDark = darkMode; // boolean value directly
-
-
   return (
     <div
       className={`min-h-screen w-full px-5 sm:px-10 py-16 transition-colors duration-500 ${
-        isDark
-      ? "bg-[#0a0a0f] text-gray-100"
-      : "bg-gray-50 text-gray-900"
-
+        isDark ? "bg-[#0a0a0f] text-gray-100" : "bg-gray-50 text-gray-900"
       }`}
     >
       <Toaster position="top-right" />
@@ -132,9 +128,7 @@ function Contact() {
           <div className="space-y-6">
             <h3 className="text-xl font-semibold">Get in Touch</h3>
             <p
-              className={`text-base ${
-                isDark ? "text-gray-400" : "text-gray-700"
-              }`}
+              className={`text-base ${isDark ? "text-gray-400" : "text-gray-700"}`}
             >
               I’m always open to collaborations and exciting projects.
             </p>
@@ -181,11 +175,7 @@ function Contact() {
                 <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                 <span>Available for New Projects</span>
               </p>
-              <p
-                className={`mt-2 text-sm ${
-                  isDark ? "text-gray-400" : "text-gray-600"
-                }`}
-              >
+              <p className={`mt-2 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                 Accepting freelance & full-time opportunities.
               </p>
             </div>
@@ -252,7 +242,7 @@ function Contact() {
               name="message"
               rows="5"
               placeholder="Message"
-              value={formData.responses}
+              value={formData.message}
               onChange={handleChange}
               className={`w-full mt-4 p-3 rounded-lg border focus:ring-2 focus:ring-green-500 outline-none resize-none ${
                 isDark
@@ -272,18 +262,12 @@ function Contact() {
 
         {/* Footer */}
         <div className="text-center mt-12 border-t border-gray-700 pt-6 text-sm">
-          <p
-            className={`${
-              isDark ? "text-gray-500" : "text-gray-700"
-            } mb-4`}
-          >
+          <p className={`${isDark ? "text-gray-500" : "text-gray-700"} mb-4`}>
             © 2025 Portfolio. Made with ❤️ by a passionate designer.
           </p>
           <motion.button
             whileHover={{ y: -4 }}
-            onClick={() =>
-              window.scrollTo({ top: 0, behavior: "smooth" })
-            }
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="inline-flex items-center space-x-2 bg-green-500 text-black px-4 py-2 rounded-full font-semibold hover:bg-green-400 transition"
           >
             <FaArrowUp />

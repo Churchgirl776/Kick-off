@@ -133,67 +133,97 @@ const Awards = ({ theme = "light" }) => {
             setFormData({ icon: "", year: "", title: "", description: "" });
             setShowForm(true);
           }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
+          className="bg-green-400 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
         >
           Add Award
         </button>
       </div>
 
-      {/* Modal Form */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className={`rounded-xl p-6 w-full max-w-md sm:max-w-lg shadow-lg ${modalBg}`}>
-            <h3 className="text-xl font-bold mb-4">{editingAward ? "Edit Award" : "Add New Award"}</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {["icon", "year", "title", "description"].map((field) => (
-                <div key={field}>
-                  <label className="block text-sm font-medium mb-1 capitalize">{field}</label>
-                  {field === "description" ? (
-                    <textarea
-                      value={formData[field]}
-                      onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-                      rows={3}
-                      className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
-                    />
-                  ) : (
-                    <input
-                      type={field === "year" ? "number" : "text"}
-                      value={formData[field]}
-                      onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-                      className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
-                      placeholder={field === "icon" ? "🏆 or https://..." : undefined}
-                      required={field === "year" || field === "title"}
-                    />
-                  )}
-                </div>
-              ))}
-              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingAward(null);
-                  }}
-                  className={`px-4 py-2 rounded-lg border hover:bg-gray-50 ${
-                    theme === "dark" ? "border-zinc-600" : "border-gray-300"
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  {editingAward ? "Update" : "Add"}
-                </button>
-              </div>
-            </form>
-          </div>
+    {/* Modal Form */}
+{showForm && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div className={`rounded-xl p-6 w-full max-w-md sm:max-w-lg shadow-lg ${modalBg}`}>
+      <h3 className="text-xl font-bold mb-4">
+        {editingAward ? "Edit Award" : "Add New Award"}
+      </h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+
+        {/* Icon / Image URL */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Icon / Image URL</label>
+          <input
+            type="text"
+            value={formData.icon}
+            onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+            placeholder="🏆 or https://example.com/image.png"
+            className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+          />
         </div>
-      )}
+
+        {/* Year */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Year</label>
+          <input
+            type="number"
+            value={formData.year}
+            onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+            className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+            required
+          />
+        </div>
+
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Title</label>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+            required
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Description</label>
+          <textarea
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+            className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+          />
+        </div>
+
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+          <button
+            type="button"
+            onClick={() => {
+              setShowForm(false);
+              setEditingAward(null);
+            }}
+            className={`px-4 py-2 rounded-lg border hover:bg-gray-50 ${
+              theme === "dark" ? "border-zinc-600" : "border-gray-300"
+            }`}
+          >
+            Cancel
+          </button>
+          <button type="submit" className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-blue-700">
+            {editingAward ? "Update" : "Add"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 {/* Awards Grid */}
-<div className="grid gap-6 justify-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+<div className="grid gap-6 justify-center 
+                grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
   {awards.map((award) => (
     <div
       key={award.id}
-      className={`rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border ${cardBg} break-words w-full max-w-sm`}
+      className={`rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border ${cardBg} break-words`}
     >
       <div className="flex items-center space-x-4 mb-3">
         <span className="text-3xl">
@@ -244,7 +274,7 @@ const Awards = ({ theme = "light" }) => {
             setFormData(award);
             setShowForm(true);
           }}
-          className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm hover:bg-blue-700 transition"
+          className="flex-1 bg-green-400 text-white py-2 rounded-lg text-sm hover:bg-green-500 transition"
         >
           Edit
         </button>

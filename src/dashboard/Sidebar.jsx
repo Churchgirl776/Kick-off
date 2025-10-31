@@ -33,6 +33,7 @@ const Sidebar = ({
   const [isOpen, setIsOpen] = useState(false);
   const [showEllipsis, setShowEllipsis] = useState(false);
   const toolbarRef = useRef();
+  console.log("showEllipsis:", showEllipsis);
 
   // Detect toolbar overflow for ellipsis
   useEffect(() => {
@@ -67,7 +68,7 @@ const Sidebar = ({
               theme === "dark" ? "border-zinc-700" : "border-gray-200"
             }`}
           >
-            Admin Panel
+          
           </div>
 
           {/* Navigation */}

@@ -43,9 +43,12 @@ const Navbar = () => {
     >
       <div className="flex items-center justify-between p-4 max-w-7xl mx-auto">
         {/* Logo */}
-        <h1 className="text-xl font-bold text-gray-900 portfolio-dark:text-white">
-          My Portfolio
-        </h1>
+        <h1 className={`text-xl font-bold transition-colors duration-300 ${
+  darkMode ? "text-white" : "text-gray-900"
+}`}>
+  My Portfolio
+</h1>
+
 
         {/* Desktop Nav Links */}
         <ul className="hidden md:flex space-x-6">

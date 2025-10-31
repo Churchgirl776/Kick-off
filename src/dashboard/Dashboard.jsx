@@ -13,7 +13,7 @@ import ResponsesManager from "./Responses";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Theme context to share theme across all child components
+// Theme context
 export const ThemeContext = createContext();
 
 const Dashboard = () => {
@@ -31,7 +31,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Protect dashboard route
+  // ✅ Protect route
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) navigate("/");
@@ -39,7 +39,7 @@ const Dashboard = () => {
     return unsubscribe;
   }, [navigate]);
 
-  // Apply theme globally
+  // ✅ Apply theme globally
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") root.classList.add("dark");
@@ -50,28 +50,7 @@ const Dashboard = () => {
   const toggleTheme = () =>
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
 
-  // Render child managers
-  const renderContent = () => {
-    const commonProps = { theme, toggleTheme, onUpdate: fetchStats };
-    switch (activeSection) {
-      case "projects":
-        return <ProjectsManager {...commonProps} />;
-      case "skills":
-        return <SkillsManager {...commonProps} />;
-      case "awards":
-        return <AwardsManager {...commonProps} />;
-      case "experience":
-        return <ExperienceManager {...commonProps} />;
-      case "social":
-        return <SocialMediaManager {...commonProps} />;
-      case "responses":
-        return <ResponsesManager {...commonProps} />;
-      default:
-        return null;
-    }
-  };
-
-  // Real-time stats
+  // ✅ Real-time Firestore stats
   useEffect(() => {
     setLoading(true);
     const unsubscribers = [
@@ -98,15 +77,20 @@ const Dashboard = () => {
     return () => unsubscribers.forEach((unsub) => unsub && unsub());
   }, []);
 
-  // Manual refresh
+  // ✅ Manual refresh
   const fetchStats = useCallback(async () => {
     setRefreshing(true);
     try {
       const [projects, skills, awards, experience, social, responses] =
         await Promise.all(
-          ["projects", "skills", "awards", "experience", "socialMedia", "responses"].map((c) =>
-            getDocs(collection(db, c))
-          )
+          [
+            "projects",
+            "skills",
+            "awards",
+            "experience",
+            "socialMedia",
+            "responses",
+          ].map((c) => getDocs(collection(db, c)))
         );
       setStats({
         projects: projects.size,
@@ -114,7 +98,7 @@ const Dashboard = () => {
         awards: awards.size,
         experience: experience.size,
         social: social.size,
-        responses: responses.size,
+        contactresponses: responses.size,
       });
     } catch (e) {
       console.error(e);
@@ -135,37 +119,67 @@ const Dashboard = () => {
     }
   }, [navigate]);
 
+  // ✅ Render active section
+  const renderContent = () => {
+    const commonProps = { theme, toggleTheme, onUpdate: fetchStats };
+
+    switch (activeSection) {
+      case "projects":
+        return <ProjectsManager {...commonProps} />;
+      case "skills":
+        return <SkillsManager {...commonProps} />;
+      case "awards":
+        return <AwardsManager {...commonProps} />;
+      case "experience":
+        return <ExperienceManager {...commonProps} />;
+      case "social":
+        return <SocialMediaManager {...commonProps} />;
+      case "responses": // ✅ FIXED lowercase
+        return <ResponsesManager {...commonProps} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <div
         className={`min-h-screen flex transition-colors duration-500 ${
-          theme === "dark" ? "bg-zinc-950 text-gray-100" : "bg-gray-100 text-gray-900"
+          theme === "dark"
+            ? "bg-zinc-950 text-gray-100"
+            : "bg-gray-100 text-gray-900"
         }`}
       >
-        {/* Sidebar always visible */}
-        <Sidebar
-          activeSection={activeSection}
-          setActiveSection={setActiveSection}
-          theme={theme}
-          toggleTheme={toggleTheme}
-          handleLogout={handleLogout}
-          isOpen={true}
-        />
+        {/* Sidebar (always visible on desktop) */}
+        <div className="fixed top-0 left-0 z-50 h-full lg:w-64">
+          <Sidebar
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            handleLogout={handleLogout}
+          />
+        </div>
 
-        {/* Main content */}
-        <main className="flex-1 transition-all duration-300 p-4 sm:p-6 md:p-8 lg:ml-64">
+        {/* Main Content Area */}
+        <main className="flex-1 ml-0 lg:ml-64 p-4 sm:p-6 md:p-8 transition-all duration-300">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <h1 className="text-4xl text-green-400 font-bold"></h1>
             <button
               onClick={fetchStats}
               disabled={refreshing}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 transition"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm-hidden py-2 rounded-lg disabled:opacity-50 transition"
             >
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
-          {/* Overview */}
+          {/* ✅ Overview Cards */}
           {activeSection === "overview" && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
               {loading ? (
@@ -178,32 +192,33 @@ const Dashboard = () => {
                     { title: "Awards", color: "text-purple-600", key: "awards" },
                     { title: "Experience", color: "text-orange-600", key: "experience" },
                     { title: "Socials", color: "text-yellow-600", key: "social" },
-                    { title: "Responses", color: "text-pink-600", key: "responses" },
+                    { title: "Responses", color: "text-pink-600", key: "contactresponses" },
                   ].map(({ title, color, key }) => (
                     <motion.div
                       key={key}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className={`p-6 rounded-xl border shadow-sm hover:shadow-md transition cursor-pointer ${
-                        theme === "dark" ? "bg-zinc-900 border-zinc-700" : "bg-white border-gray-200"
+                      className={`p-6 rounded-xl border shadow-sm hover:shadow-md transition ${
+                        theme === "dark"
+                          ? "bg-zinc-900 border-zinc-700"
+                          : "bg-white border-gray-200"
                       }`}
-                      onClick={() => setActiveSection(key)}
                     >
                       <h3 className="font-semibold text-lg mb-2">{title}</h3>
                       <p className={`text-2xl font-bold ${color}`}>{stats[key]}</p>
                       <p className="text-sm opacity-75">
-                        {key === "projects"
+                        {title === "Projects"
                           ? "Total projects"
-                          : key === "skills"
+                          : title === "Skills"
                           ? "Technical skills"
-                          : key === "awards"
+                          : title === "Awards"
                           ? "Achievements"
-                          : key === "experience"
+                          : title === "Experience"
                           ? "Work experience"
-                          : key === "social"
+                          : title === "Socials"
                           ? "Social media handles"
-                          : "Feedbacks received"}
+                          : "Feedback messages"}
                       </p>
                     </motion.div>
                   ))}
@@ -212,7 +227,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Active Section */}
+          {/* ✅ Active Section Render */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}

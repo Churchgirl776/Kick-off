@@ -135,9 +135,15 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
   };
 
   // Card theme classes
-  const cardBg = safeTheme === "dark" ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-gray-900 border-gray-200";
-  const badgeBg = safeTheme === "dark" ? "bg-zinc-700 text-gray-200" : "bg-blue-100 text-blue-800";
-  const inputBg = safeTheme === "dark" ? "bg-zinc-800 text-gray-100 border-zinc-700" : "bg-white text-gray-900 border-gray-300";
+  const cardBg = safeTheme === "dark"
+    ? "bg-zinc-900 text-gray-100 border-zinc-700"
+    : "bg-white text-gray-900 border-gray-200";
+  const badgeBg = safeTheme === "dark"
+    ? "bg-zinc-700 text-gray-200"
+    : "bg-blue-100 text-blue-800";
+  const inputBg = safeTheme === "dark"
+    ? "bg-zinc-800 text-gray-100 border-zinc-700"
+    : "bg-white text-gray-900 border-gray-300";
 
   return (
     <div className="relative">
@@ -154,7 +160,7 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
       />
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <div>
           <h2 className="text-2xl font-bold">Skills</h2>
           <p className="text-sm text-gray-500">Manage your technical and soft skills</p>
@@ -172,7 +178,7 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
             });
             setShowForm(true);
           }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
         >
           Add Skill
         </button>
@@ -184,6 +190,7 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
           <div className={`rounded-xl p-6 w-full max-w-md shadow-lg ${cardBg}`}>
             <h3 className="text-xl font-bold mb-4">{editingSkill ? "Edit Skill" : "Add New Skill"}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Skill Name */}
               <div>
                 <label className="block text-sm font-medium mb-1">Skill Name</label>
                 <input
@@ -195,6 +202,7 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
                 />
               </div>
 
+              {/* Description */}
               <div>
                 <label className="block text-sm font-medium mb-1">Description</label>
                 <textarea
@@ -206,6 +214,7 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
                 />
               </div>
 
+              {/* Category */}
               <div>
                 <label className="block text-sm font-medium mb-1">Category</label>
                 <select
@@ -219,6 +228,19 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
                 </select>
               </div>
 
+              {/* Icon / Image URL */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Icon / Image URL</label>
+                <input
+                  type="text"
+                  value={formData.icon}
+                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                  placeholder="Emoji or image URL (e.g., 🛠️ or https://...)"
+                  className={`w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+                />
+              </div>
+
+              {/* Proficiency */}
               <div>
                 <label className="block text-sm font-medium mb-1">Proficiency: {formData.proficiency}%</label>
                 <input
@@ -231,9 +253,14 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
                 />
               </div>
 
+              {/* Buttons */}
               <div className="flex justify-end space-x-3 pt-4">
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg border hover:bg-gray-100">Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">{editingSkill ? "Update Skill" : "Add Skill"}</button>
+                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg border hover:bg-gray-100">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-green-400 text-white hover:bg-green-500">
+                  {editingSkill ? "Update Skill" : "Add Skill"}
+                </button>
               </div>
             </form>
           </div>
@@ -241,7 +268,7 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
       )}
 
       {/* Skill Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {skills.map((skill) => (
           <div key={skill.id} className={`rounded-xl border p-6 transition ${cardBg}`}>
             <div className="flex items-center justify-between mb-3">
@@ -249,27 +276,32 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
                 {skill.icon && (
                   <span className="text-2xl">
                     {skill.icon.startsWith("http") ? (
-                      <img src={skill.icon} alt={skill.name} className="w-8 h-8" />
+                      <img
+                        src={skill.icon}
+                        alt={skill.name}
+                        className="w-10 h-10 object-cover rounded-full border"
+                      />
                     ) : (
                       skill.icon
                     )}
                   </span>
                 )}
-                <h3 className="font-semibold text-lg">{skill.name}</h3>
+                <h3 className="font-semibold text-lg truncate">{skill.name}</h3>
               </div>
-              <span className={`px-2 py-1 text-xs font-medium rounded ${badgeBg}`}>
-                {skill.category}
-              </span>
+              <span className={`px-2 py-1 text-xs font-medium rounded ${badgeBg}`}>{skill.category}</span>
             </div>
 
-            {skill.description && (
-              <p className="text-sm mb-3 line-clamp-3">{skill.description}</p>
-            )}
+            {skill.description && <p className="text-sm mb-3 line-clamp-3">{skill.description}</p>}
 
             {skill.technologies && skill.technologies.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {skill.technologies.map((tech, idx) => (
-                  <span key={idx} className={`px-2 py-1 text-xs rounded-full border ${safeTheme === "dark" ? "bg-zinc-800 text-gray-200 border-zinc-700" : "bg-gray-100 text-gray-700 border-gray-200"}`}>
+                  <span
+                    key={idx}
+                    className={`px-2 py-1 text-xs rounded-full border ${
+                      safeTheme === "dark" ? "bg-zinc-800 text-gray-200 border-zinc-700" : "bg-gray-100 text-gray-700 border-gray-200"
+                    }`}
+                  >
                     {tech}
                   </span>
                 ))}
@@ -282,13 +314,20 @@ const SkillsManager = ({ theme = "light", onUpdate }) => {
                 <span>{skill.proficiency}%</span>
               </div>
               <div className={`w-full rounded-full h-2 ${safeTheme === "dark" ? "bg-zinc-700" : "bg-gray-200"}`}>
-                <div className="h-2 rounded-full bg-green-600 transition-all duration-300" style={{ width: `${skill.proficiency}%` }}></div>
+                <div
+                  className="h-2 rounded-full bg-green-600 transition-all duration-300"
+                  style={{ width: `${skill.proficiency}%` }}
+                ></div>
               </div>
             </div>
 
             <div className="flex space-x-2">
-              <button onClick={() => handleEdit(skill)} className="flex-1 py-2 px-3 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700">Edit</button>
-              <button onClick={() => handleDelete(skill.id)} className="flex-1 py-2 px-3 rounded-lg text-sm bg-red-600 text-white hover:bg-red-700">Delete</button>
+              <button onClick={() => handleEdit(skill)} className="flex-1 py-2 px-3 rounded-lg text-sm bg-green-400 text-white hover:bg-green-500">
+                Edit
+              </button>
+              <button onClick={() => handleDelete(skill.id)} className="flex-1 py-2 px-3 rounded-lg text-sm bg-red-600 text-white hover:bg-red-700">
+                Delete
+              </button>
             </div>
           </div>
         ))}
