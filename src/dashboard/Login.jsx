@@ -1,13 +1,25 @@
-// /src/dashboard/LoginModal.jsx
+// /src/dashboard/Login.jsx
 import React, { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase/firebaseConfig";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase/firebaseConfig";
 import { useNavigate } from "react-router-dom";
-import { FaUser, FaEnvelope, FaLock, FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  FaUser,
+  FaEnvelope,
+  FaLock,
+  FaArrowLeft,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
 
 const Login = ({ onClose }) => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [description, setDescription] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,13 +28,46 @@ const Login = ({ onClose }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+
     try {
-      // Firebase only accepts email + password
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate("/admin");
+      // Check if user already exists
+      let userCredential;
+      try {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      } catch {
+        // If not, create a new admin account
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+        // Save admin info in Firestore
+        await setDoc(doc(db, "admins", userCredential.user.uid), {
+          fullName,
+          description,
+          email,
+          createdAt: new Date(),
+          workspace: [], // start with blank workspace
+        });
+      }
+
+      const userDoc = await getDoc(doc(db, "admins", userCredential.user.uid));
+
+      // Redirect logic:
+      if (userDoc.exists()) {
+        const adminData = userDoc.data();
+
+        if (adminData.workspace && adminData.workspace.length > 0) {
+          // Existing admin with stored data → load dashboard with their collection
+          navigate("/admin");
+        } else {
+          // New admin → redirect to a clean workspace view
+          navigate("/admin?new=true");
+        }
+      } else {
+        // Fallback if doc not found
+        navigate("/admin?new=true");
+      }
     } catch (err) {
       console.error(err);
-      setError(err.message); // show real Firebase error
+      setError(err.message);
     }
   };
 
@@ -36,7 +81,7 @@ const Login = ({ onClose }) => {
 
       {/* Modal */}
       <div className="relative bg-gray-900 text-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-md z-50 animate-fadeIn">
-        {/* Close / Arrow Back */}
+        {/* Back Button */}
         <button
           onClick={onClose}
           className="absolute top-3 left-3 text-gray-400 hover:text-green-400 flex items-center gap-1"
@@ -44,26 +89,38 @@ const Login = ({ onClose }) => {
           <FaArrowLeft /> <span className="hidden sm:inline">Back</span>
         </button>
 
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">Admin Login</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">
+          Admin Login / Signup
+        </h2>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          {/* Username */}
+          {/* Full Name */}
           <div className="relative">
-            {/* <FaUser className="absolute left-1 top-1/2 transform -translate-y-1/2 text-gray-400" /> */}
             <input
               type="text"
-              placeholder="Username"
+              placeholder="Full Name"
               className="w-full pl-10 p-2 sm:p-3 rounded-lg border border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Short Description */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Short Description"
+              className="w-full pl-10 p-2 sm:p-3 rounded-lg border border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               required
             />
           </div>
 
           {/* Email */}
           <div className="relative">
-            {/* <FaEnvelope className="absolute left-1 top-1/2 transform -translate-y-1/2 text-gray-400" /> */}
             <input
               type="email"
               placeholder="Email"
@@ -76,7 +133,6 @@ const Login = ({ onClose }) => {
 
           {/* Password */}
           <div className="relative">
-            {/* <FaLock className="absolute rig-0 top-1/2 transform -translate-y-1/2 text-gray-400" /> */}
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
@@ -99,7 +155,7 @@ const Login = ({ onClose }) => {
             type="submit"
             className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white py-2 sm:py-3 rounded-lg shadow-lg shadow-green-400/50 font-semibold transition-all duration-300"
           >
-            Login
+            Login / Register
           </button>
         </form>
       </div>

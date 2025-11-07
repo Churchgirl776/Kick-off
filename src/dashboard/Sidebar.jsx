@@ -23,28 +23,17 @@ const sections = [
   { id: "responses", label: "Responses", icon: <FaMailBulk /> },
 ];
 
-const Sidebar = ({
-  activeSection,
-  setActiveSection,
-  theme,
-  toggleTheme,
-  handleLogout,
-}) => {
+const Sidebar = ({ activeSection, setActiveSection, theme, toggleTheme, handleLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showEllipsis, setShowEllipsis] = useState(false);
   const toolbarRef = useRef();
-  console.log("showEllipsis:", showEllipsis);
 
-  // Detect toolbar overflow for ellipsis
   useEffect(() => {
     const checkOverflow = () => {
       if (!toolbarRef.current) return;
-      const toolbarWidth = toolbarRef.current.offsetWidth;
       let totalWidth = 0;
       toolbarRef.current.childNodes.forEach((child) => {
         totalWidth += child.offsetWidth;
       });
-      setShowEllipsis(totalWidth > toolbarWidth);
     };
     checkOverflow();
     window.addEventListener("resize", checkOverflow);
@@ -61,14 +50,14 @@ const Sidebar = ({
             : "bg-white text-gray-800 border-gray-200"
         }`}
       >
-        {/* Logo / Title */}
         <div>
+          {/* Logo / Title */}
           <div
             className={`text-2xl font-bold text-center py-6 border-b ${
               theme === "dark" ? "border-zinc-700" : "border-gray-200"
             }`}
           >
-          
+            Admin Panel
           </div>
 
           {/* Navigation */}
@@ -94,9 +83,9 @@ const Sidebar = ({
           </nav>
         </div>
 
-        {/* Theme & Logout */}
+        {/* Theme & Logout (Desktop Sidebar) */}
         <div
-          className={`px-4 py-6 border-t ${
+          className={`px-4 py-6 border-t flex flex-col gap-2 ${
             theme === "dark" ? "border-zinc-700" : "border-gray-200"
           }`}
         >
@@ -116,22 +105,31 @@ const Sidebar = ({
               <FaMoon className="text-blue-400" />
             )}
           </div>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-between w-full p-3 rounded-lg text-red-600 hover:bg-red-100 dark:hover:bg-zinc-800"
+          >
+            <span>Logout</span>
+            <FaSignOutAlt />
+          </button>
         </div>
       </aside>
 
-      {/* TOP TOOLBAR (for mobile/tablet + logout) */}
+      {/* TOP TOOLBAR (for mobile/tablet only) */}
       <div
-        className={`fixed top-0 left-0 w-full right-0 z-50 flex items-center gap-2 px-3 py-2 border-b transition-all duration-300 ${
+        className={`fixed top-0 left-0 w-full z-50 flex items-center gap-2 px-3 py-2 border-b transition-all duration-300 lg:hidden ${
           theme === "dark"
             ? "bg-zinc-900 border-zinc-800 text-gray-100"
             : "bg-white border-gray-200 text-gray-800"
         }`}
         ref={toolbarRef}
       >
-        {/* Ellipsis (mobile sidebar trigger) */}
+        {/* Sidebar Toggle */}
         <button
           onClick={() => setIsOpen((prev) => !prev)}
-          className="flex items-center justify-center p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800"
+          className="flex items-center justify-center p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800"
         >
           {isOpen ? <FaTimes /> : <FaEllipsisH />}
         </button>
@@ -154,7 +152,7 @@ const Sidebar = ({
           )}
         </button>
 
-        {/* Logout Button (Top Right) */}
+        {/* Logout */}
         <button
           onClick={handleLogout}
           className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-zinc-800 text-red-600"
@@ -180,7 +178,8 @@ const Sidebar = ({
           </button>
         </div>
 
-        <nav className="flex flex-col px-4 py-6 space-y-2">
+        {/* Navigation + Settings */}
+        <nav className="flex flex-col px-4 py-6 space-y-2 h-full overflow-y-auto">
           {sections.map((section) => (
             <div
               key={section.id}
@@ -198,10 +197,32 @@ const Sidebar = ({
               <span>{section.label}</span>
             </div>
           ))}
+
+          {/* Theme & Logout for Mobile */}
+          <div className="mt-auto px-4 py-6 space-y-2 border-t border-gray-200 dark:border-zinc-700">
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800"
+            >
+              <span>Theme</span>
+              {theme === "light" ? (
+                <FaSun className="text-yellow-400" />
+              ) : (
+                <FaMoon className="text-blue-400" />
+              )}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center justify-between w-full p-3 rounded-lg text-red-600 hover:bg-red-100 dark:hover:bg-zinc-800"
+            >
+              <span>Logout</span>
+              <FaSignOutAlt />
+            </button>
+          </div>
         </nav>
       </aside>
 
-      {/* Overlay when sidebar open */}
+      {/* Overlay when sidebar is open */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-25 z-30 lg:hidden"

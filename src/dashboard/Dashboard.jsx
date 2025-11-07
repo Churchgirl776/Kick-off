@@ -9,8 +9,7 @@ import SkillsManager from "./Skills";
 import AwardsManager from "./Awards";
 import ExperienceManager from "./Experience";
 import SocialMediaManager from "./SocialMedia";
-import ResponsesManager from "./Responses";
-import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Theme context
@@ -20,16 +19,23 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("overview");
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+
+  // ✅ Dynamic styles
+  const [styles, setStyles] = useState({
+    bgColor: theme === "light" ? "#f3f4f6" : "#0a0a0f",
+    textColor: theme === "light" ? "#111111" : "#f0f0f0",
+    buttonColor: "#22c55e",
+    fontFamily: "sans-serif",
+  });
+
   const [stats, setStats] = useState({
     projects: 0,
     skills: 0,
     awards: 0,
     experience: 0,
     social: 0,
-    responses: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   // ✅ Protect route
   useEffect(() => {
@@ -39,18 +45,24 @@ const Dashboard = () => {
     return unsubscribe;
   }, [navigate]);
 
-  // ✅ Apply theme globally
+  // ✅ Apply theme
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
     localStorage.setItem("theme", theme);
+
+    setStyles((prev) => ({
+      ...prev,
+      bgColor: theme === "light" ? "#f3f4f6" : "#0a0a0f",
+      textColor: theme === "light" ? "#111111" : "#f0f0f0",
+    }));
   }, [theme]);
 
   const toggleTheme = () =>
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
 
-  // ✅ Real-time Firestore stats
+  // ✅ Real-time Firestore stats (auto-updating)
   useEffect(() => {
     setLoading(true);
     const unsubscribers = [
@@ -69,46 +81,10 @@ const Dashboard = () => {
       onSnapshot(collection(db, "socialMedia"), (snap) =>
         setStats((prev) => ({ ...prev, social: snap.size }))
       ),
-      onSnapshot(collection(db, "responses"), (snap) =>
-        setStats((prev) => ({ ...prev, responses: snap.size }))
-      ),
     ];
     setLoading(false);
     return () => unsubscribers.forEach((unsub) => unsub && unsub());
   }, []);
-
-  // ✅ Manual refresh
-  const fetchStats = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      const [projects, skills, awards, experience, social, responses] =
-        await Promise.all(
-          [
-            "projects",
-            "skills",
-            "awards",
-            "experience",
-            "socialMedia",
-            "responses",
-          ].map((c) => getDocs(collection(db, c)))
-        );
-      setStats({
-        projects: projects.size,
-        skills: skills.size,
-        awards: awards.size,
-        experience: experience.size,
-        social: social.size,
-        contactresponses: responses.size,
-      });
-    } catch (e) {
-      console.error(e);
-    }
-    setRefreshing(false);
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -121,8 +97,7 @@ const Dashboard = () => {
 
   // ✅ Render active section
   const renderContent = () => {
-    const commonProps = { theme, toggleTheme, onUpdate: fetchStats };
-
+    const commonProps = { theme, toggleTheme, styles, setStyles };
     switch (activeSection) {
       case "projects":
         return <ProjectsManager {...commonProps} />;
@@ -134,8 +109,6 @@ const Dashboard = () => {
         return <ExperienceManager {...commonProps} />;
       case "social":
         return <SocialMediaManager {...commonProps} />;
-      case "responses": // ✅ FIXED lowercase
-        return <ResponsesManager {...commonProps} />;
       default:
         return null;
     }
@@ -144,13 +117,14 @@ const Dashboard = () => {
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <div
-        className={`min-h-screen flex transition-colors duration-500 ${
-          theme === "dark"
-            ? "bg-zinc-950 text-gray-100"
-            : "bg-gray-100 text-gray-900"
-        }`}
+        className="min-h-screen flex transition-all duration-500"
+        style={{
+          backgroundColor: styles.bgColor,
+          color: styles.textColor,
+          fontFamily: styles.fontFamily,
+        }}
       >
-        {/* Sidebar (always visible on desktop) */}
+        {/* Sidebar */}
         <div className="fixed top-0 left-0 z-50 h-full lg:w-64">
           <Sidebar
             activeSection={activeSection}
@@ -158,28 +132,20 @@ const Dashboard = () => {
             theme={theme}
             toggleTheme={toggleTheme}
             handleLogout={handleLogout}
+            styles={styles}
+            setStyles={setStyles}
           />
         </div>
 
-        {/* Main Content Area */}
+        {/* Main Content */}
         <main className="flex-1 ml-0 lg:ml-64 p-4 sm:p-6 md:p-8 transition-all duration-300">
           <div className="flex justify-between items-center mb-6">
-            <br />
-            <br />
-            <br />
-            <br />
-            <br />
-            <h1 className="text-4xl text-green-400 font-bold"></h1>
-            <button
-              onClick={fetchStats}
-              disabled={refreshing}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm-hidden py-2 rounded-lg disabled:opacity-50 transition"
-            >
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
+            <h1 className="text-4xl font-bold text-green-400">
+              Admin Dashboard
+            </h1>
           </div>
 
-          {/* ✅ Overview Cards */}
+          {/* Overview Cards */}
           {activeSection === "overview" && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
               {loading ? (
@@ -187,26 +153,27 @@ const Dashboard = () => {
               ) : (
                 <>
                   {[
-                    { title: "Projects", color: "text-blue-600", key: "projects" },
-                    { title: "Skills", color: "text-green-600", key: "skills" },
-                    { title: "Awards", color: "text-purple-600", key: "awards" },
-                    { title: "Experience", color: "text-orange-600", key: "experience" },
-                    { title: "Socials", color: "text-yellow-600", key: "social" },
-                    { title: "Responses", color: "text-pink-600", key: "contactresponses" },
-                  ].map(({ title, color, key }) => (
+                    { title: "Projects", key: "projects" },
+                    { title: "Skills", key: "skills" },
+                    { title: "Awards", key: "awards" },
+                    { title: "Experience", key: "experience" },
+                    { title: "Socials", key: "social" },
+                  ].map(({ title, key }) => (
                     <motion.div
                       key={key}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className={`p-6 rounded-xl border shadow-sm hover:shadow-md transition ${
-                        theme === "dark"
-                          ? "bg-zinc-900 border-zinc-700"
-                          : "bg-white border-gray-200"
-                      }`}
+                      className="p-6 rounded-xl border shadow-sm hover:shadow-md transition"
+                      style={{
+                        backgroundColor:
+                          theme === "dark" ? "#111111" : "#ffffff",
+                        borderColor:
+                          theme === "dark" ? "#333333" : "#e5e7eb",
+                      }}
                     >
                       <h3 className="font-semibold text-lg mb-2">{title}</h3>
-                      <p className={`text-2xl font-bold ${color}`}>{stats[key]}</p>
+                      <p className="text-2xl font-bold">{stats[key]}</p>
                       <p className="text-sm opacity-75">
                         {title === "Projects"
                           ? "Total projects"
@@ -216,9 +183,7 @@ const Dashboard = () => {
                           ? "Achievements"
                           : title === "Experience"
                           ? "Work experience"
-                          : title === "Socials"
-                          ? "Social media handles"
-                          : "Feedback messages"}
+                          : "Social media handles"}
                       </p>
                     </motion.div>
                   ))}
@@ -227,7 +192,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* ✅ Active Section Render */}
+          {/* Active Section */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}

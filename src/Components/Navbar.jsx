@@ -109,7 +109,7 @@ const Navbar = () => {
       <div
         className={`fixed top-0 left-0 h-full w-64 z-40 transform transition-transform duration-300
           ${menuOpen ? "translate-x-0" : "-translate-x-full"}
-          ${darkMode ? "bg-[#0a0a0f]" : "bg-white/95"} md:hidden shadow-lg`}
+          ${darkMode ? "bg-[#0a0a0f]" : "bg-white"} md:hidden shadow-lg`}
       >
         <ul className="flex flex-col mt-20 space-y-6 px-6">
           {navItems.map((item) => (
@@ -120,11 +120,11 @@ const Navbar = () => {
                 duration={500}
                 spy={true}
                 offset={-70}
-                activeClass="text-blue-400 font-bold"
+                activeClass="text-green-400 font-bold"
                 className={`block cursor-pointer transition-colors duration-300 ${
                   darkMode
-                    ? "text-gray-200 hover:text-blue-400"
-                    : "text-gray-900 hover:text-blue-500"
+                    ? "text-gray-200 hover:text-green-400"
+                    : "text-gray-900 hover:text-green-500"
                 }`}
                 onClick={() => setMenuOpen(false)} // close menu on click
               >
