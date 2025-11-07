@@ -73,7 +73,7 @@ const PortfolioAwards = () => {
               return (
                 <motion.div
                   key={award.id}
-                  className={`p-6 w-full max-w-sm rounded-2xl shadow-lg border transition-all duration-300 transform hover:-translate-y-2 hover:shadow-green-600/30 ${
+                  className={`p-6 w-full h-72 max-w-sm rounded-2xl shadow-lg border transition-all duration-300 transform hover:-translate-y-1 hover:shadow-green-800/30 ${
                     darkMode ? "bg-black/70 border-gray-700" : "bg-white/90 border-gray-200"
                   }`}
                   whileHover={{ scale: 1.03 }}

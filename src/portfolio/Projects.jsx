@@ -7,6 +7,7 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { useTheme } from "../context/ThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Projects = () => {
   const { darkMode } = useTheme();
@@ -31,9 +32,10 @@ const Projects = () => {
       ? projects[selectedIndex]
       : null;
 
-  const handleProjectClick = (index) => setSelectedIndex(index);
-  const handleNext = () => setSelectedIndex((prev) => (prev === projects.length - 1 ? 0 : prev + 1));
-  const handlePrev = () => setSelectedIndex((prev) => (prev === 0 ? projects.length - 1 : prev - 1));
+  const handleNext = () =>
+    setSelectedIndex((prev) => (prev === projects.length - 1 ? 0 : prev + 1));
+  const handlePrev = () =>
+    setSelectedIndex((prev) => (prev === 0 ? projects.length - 1 : prev - 1));
 
   const sliderSettings = {
     infinite: true,
@@ -60,11 +62,16 @@ const Projects = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className={`text-4xl md:text-5xl font-bold transition-colors duration-500`}>
+          <h2 className="text-4xl md:text-5xl font-bold">
             Featured <span className="text-green-500">Projects</span>
           </h2>
-          <p className={`mt-3 max-w-2xl mx-auto transition-colors duration-500 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-            A showcase of creative projects — blending strategy, design, and development to drive growth.
+          <p
+            className={`mt-3 max-w-2xl mx-auto ${
+              darkMode ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            A showcase of creative projects — blending strategy, design, and
+            development to drive growth.
           </p>
         </div>
 
@@ -73,12 +80,14 @@ const Projects = () => {
           {projects.map((project, index) => (
             <div key={project.id} className="px-3">
               <div
-                onClick={() => handleProjectClick(index)}
+                onClick={() => setSelectedIndex(index)}
                 className={`group relative rounded-2xl overflow-hidden border transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer ${
-                  darkMode ? "bg-black border-gray-700" : "bg-white border-gray-200"
+                  darkMode
+                    ? "bg-black border-gray-700"
+                    : "bg-white border-gray-200"
                 }`}
               >
-                <div className="relative w-full h-56 md:h-64 overflow-hidden">
+                <div className="relative w-full h-64 sm:h-72 md:h-80 overflow-hidden">
                   <img
                     src={project.imageUrl}
                     alt={project.name}
@@ -92,13 +101,25 @@ const Projects = () => {
                 </div>
 
                 <div className="p-6 text-left">
-                  <p className={`text-sm uppercase font-semibold tracking-wide mb-2 transition-colors duration-500 ${darkMode ? "text-green-400" : "text-green-500"}`}>
+                  <p
+                    className={`text-sm uppercase font-semibold tracking-wide mb-2 ${
+                      darkMode ? "text-green-400" : "text-green-500"
+                    }`}
+                  >
                     {project.category || "Design & Strategy"}
                   </p>
-                  <h3 className={`text-xl font-bold mb-2 transition-colors duration-500 ${darkMode ? "text-gray-200" : "text-gray-900"}`}>
+                  <h3
+                    className={`text-xl font-bold mb-2 ${
+                      darkMode ? "text-gray-200" : "text-gray-900"
+                    }`}
+                  >
                     {project.name}
                   </h3>
-                  <p className={`text-sm leading-relaxed mb-4 line-clamp-3 transition-colors duration-500 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                  <p
+                    className={`text-sm leading-relaxed mb-4 line-clamp-3 ${
+                      darkMode ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     {project.description}
                   </p>
                 </div>
@@ -109,7 +130,9 @@ const Projects = () => {
 
         {/* Full Portfolio Button */}
         <div className="text-center mt-16">
-          <p className={`mb-3 transition-colors duration-500 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+          <p
+            className={`mb-3 ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+          >
             Want to explore more projects?
           </p>
           <button
@@ -123,123 +146,201 @@ const Projects = () => {
       </div>
 
       {/* Project Modal */}
-      {selectedProject && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto transition-all duration-500 ${darkMode ? "bg-black/70" : "bg-gray-200/60"}`}>
-          <div className={`rounded-xl max-w-3xl w-full p-6 relative shadow-2xl transition-colors duration-500 ${darkMode ? "bg-black" : "bg-white"}`}>
-            <button
-              onClick={() => setSelectedIndex(null)}
-              className={`absolute top-4 right-4 text-2xl transition-colors duration-300 ${darkMode ? "text-green-400 hover:text-white" : "text-green-600 hover:text-black"}`}
+      <AnimatePresence>
+        {selectedProject && (
+          <motion.div
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 40 }}
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ duration: 0.4 }}
+            className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto pt-20 px-4 sm:px-6 md:px-8 ${
+              darkMode ? "bg-black/70" : "bg-gray-200/60"
+            }`}
+          >
+            <div
+              className={`relative w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl rounded-2xl p-4 sm:p-6 shadow-2xl backdrop-blur-md border transition-all duration-500 ${
+                darkMode
+                  ? "bg-black/80 border-gray-700"
+                  : "bg-white/80 border-gray-300"
+              }`}
             >
-              <FiX />
-            </button>
+              {/* Close button */}
+              <button
+                onClick={() => setSelectedIndex(null)}
+                className={`absolute top-3 right-3 sm:top-4 sm:right-4 text-xl sm:text-2xl ${
+                  darkMode
+                    ? "text-green-400 hover:text-white"
+                    : "text-green-600 hover:text-black"
+                }`}
+              >
+                <FiX />
+              </button>
 
-            {/* Navigation */}
-            <button
-              onClick={handlePrev}
-              className={`absolute top-1/2 -left-6 transform -translate-y-1/2 rounded-full p-2 transition-colors duration-300 ${darkMode ? "bg-black/50 hover:bg-black text-white" : "bg-gray-200/50 hover:bg-gray-300 text-gray-900"}`}
-            >
-              <FiChevronLeft size={22} />
-            </button>
-            <button
-              onClick={handleNext}
-              className={`absolute top-1/2 -right-6 transform -translate-y-1/2 rounded-full p-2 transition-colors duration-300 ${darkMode ? "bg-black/50 hover:bg-black text-white" : "bg-gray-200/50 hover:bg-gray-300 text-gray-900"}`}
-            >
-              <FiChevronRight size={22} />
-            </button>
+              {/* Navigation buttons */}
+              <button
+                onClick={handlePrev}
+                className={`hidden sm:flex absolute top-1/2 -left-4 sm:-left-6 transform -translate-y-1/2 rounded-full p-2 ${
+                  darkMode
+                    ? "bg-black/50 hover:bg-black text-white"
+                    : "bg-gray-200/50 hover:bg-gray-300 text-gray-900"
+                }`}
+              >
+                <FiChevronLeft size={20} />
+              </button>
+              <button
+                onClick={handleNext}
+                className={`hidden sm:flex absolute top-1/2 -right-4 sm:-right-6 transform -translate-y-1/2 rounded-full p-2 ${
+                  darkMode
+                    ? "bg-black/50 hover:bg-black text-white"
+                    : "bg-gray-200/50 hover:bg-gray-300 text-gray-900"
+                }`}
+              >
+                <FiChevronRight size={20} />
+              </button>
 
-            {/* Project Content */}
-            <div className="w-full mb-5">
-              <img
-                src={selectedProject.imageUrl}
-                alt={selectedProject.name}
-                className="w-full h-64 md:h-80 object-cover rounded-lg"
-              />
-            </div>
-
-            <div className="text-left space-y-4">
-              <h3 className={`text-2xl font-bold transition-colors duration-500 ${darkMode ? "text-green-400" : "text-green-500"}`}>
-                {selectedProject.name}
-              </h3>
-              <p className={`leading-relaxed transition-colors duration-500 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
-                {selectedProject.description}
-              </p>
-              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm transition-colors duration-500 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-                {selectedProject.owner && <div><span className={`font-semibold ${darkMode ? "text-gray-200" : "text-gray-900"}`}>Owner:</span> {selectedProject.owner}</div>}
-                {selectedProject.status && <div><span className={`font-semibold ${darkMode ? "text-gray-200" : "text-gray-900"}`}>Status:</span> {selectedProject.status}</div>}
-                {selectedProject.progress && <div><span className={`font-semibold ${darkMode ? "text-gray-200" : "text-gray-900"}`}>Progress:</span> {selectedProject.progress}</div>}
-                {selectedProject.technologies && (
-                  <div className={`sm:col-span-2`}>
-                    <span className={`font-semibold ${darkMode ? "text-gray-200" : "text-gray-900"}`}>Technologies:</span>{" "}
-                    {Array.isArray(selectedProject.technologies) ? selectedProject.technologies.join(", ") : selectedProject.technologies}
-                  </div>
-                )}
+              {/* Project Content */}
+              <div className="mb-4">
+                <img
+                  src={selectedProject.imageUrl}
+                  alt={selectedProject.name}
+                  className="w-full h-48 sm:h-56 md:h-72 object-cover rounded-lg"
+                />
               </div>
-            </div>
 
-            {/* Stages */}
-            {selectedProject.stages?.length > 0 && (
-              <div className="mt-6">
-                <h4 className={`text-lg font-semibold mb-2 transition-colors duration-500 ${darkMode ? "text-green-400" : "text-green-500"}`}>Project Stages</h4>
-                <ul className={`list-disc list-inside space-y-1 transition-colors duration-500 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
-                  {selectedProject.stages.map((stage, i) => <li key={i}>{stage}</li>)}
-                </ul>
-              </div>
-            )}
-
-            {/* Gallery */}
-            {selectedProject.gallery?.length > 0 && (
-              <div className="mt-6">
-                <h4 className={`text-lg font-semibold mb-2 transition-colors duration-500 ${darkMode ? "text-green-400" : "text-green-500"}`}>Gallery</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {selectedProject.gallery.map((img, i) => (
-                    <img
-                      key={i}
-                      src={img}
-                      alt={`Gallery ${i}`}
-                      className="rounded-lg w-full h-32 object-cover hover:scale-105 transition-transform"
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Full Portfolio Modal */}
-      {showPortfolioModal && (
-        <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center pt-16 overflow-y-auto transition-all duration-500 ${darkMode ? "bg-black/80" : "bg-gray-200/60"}`}>
-          <div className={`rounded-xl p-6 max-w-6xl w-full relative shadow-2xl transition-colors duration-500 ${darkMode ? "bg-black" : "bg-white"}`}>
-            <button
-              onClick={() => setShowPortfolioModal(false)}
-              className={`absolute top-4 right-4 text-2xl transition-colors duration-300 ${darkMode ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"}`}
-            >
-              <FiX />
-            </button>
-
-            <h3 className={`text-3xl font-bold text-center transition-colors duration-500 ${darkMode ? "text-green-400" : "text-green-500"}`}>Full Portfolio</h3>
-            <br /><br />
-
-            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 px-2 sm:px-4">
-              {projects.map((project, index) => (
-                <div
-                  key={project.id}
-                  onClick={() => { setSelectedIndex(index); setShowPortfolioModal(false); }}
-                  className={`rounded-xl overflow-hidden border cursor-pointer hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 ${
-                    darkMode ? "bg-black border-gray-700" : "bg-white border-gray-200"
+              <div className="space-y-3 text-left">
+                <h3
+                  className={`text-xl sm:text-2xl font-bold ${
+                    darkMode ? "text-green-400" : "text-green-500"
                   }`}
                 >
-                  <img src={project.imageUrl} alt={project.name} className="w-full h-48 object-cover" />
-                  <div className="p-4">
-                    <h4 className={`text-lg font-semibold mb-1 transition-colors duration-500 ${darkMode ? "text-gray-200" : "text-gray-900"}`}>{project.name}</h4>
-                    <p className={`text-sm line-clamp-2 transition-colors duration-500 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{project.description}</p>
-                  </div>
+                  {selectedProject.name}
+                </h3>
+                <p
+                  className={`text-sm sm:text-base leading-relaxed ${
+                    darkMode ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
+                  {selectedProject.description}
+                </p>
+
+                {/* Info Grid */}
+                <div
+                  className={`grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm sm:text-base ${
+                    darkMode ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  {selectedProject.owner && (
+                    <div>
+                      <span
+                        className={`font-semibold ${
+                          darkMode ? "text-gray-200" : "text-gray-900"
+                        }`}
+                      >
+                        Owner:
+                      </span>{" "}
+                      {selectedProject.owner}
+                    </div>
+                  )}
+                  {selectedProject.status && (
+                    <div>
+                      <span
+                        className={`font-semibold ${
+                          darkMode ? "text-gray-200" : "text-gray-900"
+                        }`}
+                      >
+                        Status:
+                      </span>{" "}
+                      {selectedProject.status}
+                    </div>
+                  )}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Full Portfolio Modal */}
+      <AnimatePresence>
+        {showPortfolioModal && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 50 }}
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ duration: 0.4 }}
+            className={`fixed inset-0 z-50 flex flex-col items-center justify-start pt-24 overflow-y-auto px-4 sm:px-6 ${
+              darkMode ? "bg-black/80" : "bg-gray-200/60"
+            }`}
+          >
+            <div
+              className={`relative w-full max-w-6xl rounded-2xl p-4 sm:p-6 shadow-2xl backdrop-blur-md border transition-all duration-500 ${
+                darkMode
+                  ? "bg-black/80 border-gray-700"
+                  : "bg-white/80 border-gray-300"
+              }`}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowPortfolioModal(false)}
+                className={`absolute top-3 right-3 sm:top-4 sm:right-4 text-xl sm:text-2xl ${
+                  darkMode
+                    ? "text-gray-400 hover:text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <FiX />
+              </button>
+
+              <h3
+                className={`text-3xl font-bold text-center ${
+                  darkMode ? "text-green-400" : "text-green-500"
+                }`}
+              >
+                Full Portfolio
+              </h3>
+
+              <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 mt-8 px-2 sm:px-4">
+                {projects.map((project, index) => (
+                  <div
+                    key={project.id}
+                    onClick={() => {
+                      setSelectedIndex(index);
+                      setShowPortfolioModal(false);
+                    }}
+                    className={`rounded-xl overflow-hidden border cursor-pointer hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 ${
+                      darkMode
+                        ? "bg-black border-gray-700"
+                        : "bg-white border-gray-200"
+                    }`}
+                  >
+                    <img
+                      src={project.imageUrl}
+                      alt={project.name}
+                      className="w-full h-48 sm:h-56 md:h-60 object-cover"
+                    />
+                    <div className="p-3 sm:p-4">
+                      <h4
+                        className={`text-lg sm:text-xl font-semibold mb-1 ${
+                          darkMode ? "text-gray-200" : "text-gray-900"
+                        }`}
+                      >
+                        {project.name}
+                      </h4>
+                      <p
+                        className={`text-sm sm:text-base line-clamp-2 ${
+                          darkMode ? "text-gray-400" : "text-gray-600"
+                        }`}
+                      >
+                        {project.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
